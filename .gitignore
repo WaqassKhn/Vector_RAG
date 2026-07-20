@@ -1,0 +1,59 @@
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Environment & Secret API Keys
+.env
+.env.*
+
+# Python Cache & Build Artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+build/
+dist/
+*.egg-info/
+
+# User Data & Uploaded Documents (Keep directory structure via .gitkeep)
+data/*
+!data/**/.gitkeep
+sample_data/
+
+# Generated Vector Databases & Indexes
+*.faiss
+*.index
+*.pkl
+
+# Scratch, Cloned Repositories & Temporary Workspace
+scratch/
+tmp/
+
+# Evaluation Outputs, Experiment Summaries & Logs
+evals/
+ragbench eval score/
+experiments/
+logs/
+*.log
+
+# Automated Testing & Coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDE & Editor Configs
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# AI Tool Configurations
+.claude/
+.agents/
+.streamlit/
+
+# OS Generated Files
+.DS_Store
+Thumbs.db
