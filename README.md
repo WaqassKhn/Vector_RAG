@@ -107,3 +107,4 @@ w:/RAG_NTPC/
 └── tests/
     └── test_pipeline.py       # Automated unit tests
 ```
+Frontend under progress
