@@ -4,7 +4,7 @@ A robust Retrieval-Augmented Generation (RAG) system specialized in processing n
 
 ---
 
-## 📂 How to Store Your Documents (Without Web App Uploads)
+## How to Store Your Documents (Without Web App Uploads)
 
 If you do not want to manually upload your files through the web interface every time you run the system, you can store your custom documents permanently inside the repository folder structure:
 
@@ -21,7 +21,7 @@ If you do not want to manually upload your files through the web interface every
 
 ---
 
-##ChatGPT-Style UI
+## ChatGPT-Style UI
 
 Launch the web interface from the project root directory:
 ```bash
