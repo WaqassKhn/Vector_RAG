@@ -78,7 +78,7 @@ Results are automatically exported to:
 
 ---
 
-## 📄 Project Structure
+## Project Structure
 ```
 w:/RAG_NTPC/
 ├── config.py                 # Central configurations & default parameters
@@ -101,9 +101,10 @@ w:/RAG_NTPC/
 ├── evaluation/
 │   ├── eval_ragbench.py       # Official RAGBench dataset evaluator
 │   └── grounding_eval.py      # Claim verification & numerical accuracy auditor
-├── ragbench eval score/       # 👈 RAGBENCH EVALUATION SCORES SAVED HERE
+├── ragbench eval score/       # RAGBENCH EVALUATION SCORES SAVED HERE
 ├── sample_data/
 │   └── dirty_company_report.txt # 1 Sample Dummy Dataset for testing
 └── tests/
     └── test_pipeline.py       # Automated unit tests
 ```
+Frontend under progress
