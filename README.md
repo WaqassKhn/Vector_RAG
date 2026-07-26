@@ -25,7 +25,7 @@ If you do not want to manually upload your files through the web interface every
 
 Launch the web interface from the project root directory:
 ```bash
-# Make sure your terminal working directory is the project root (w:/RAG_NTPC)
+# Make sure your terminal working directory is the project root
 streamlit run app.py
 ```
 
