@@ -1,4 +1,4 @@
-# Grounded RAG Assistant (ChatGPT-Style UI & RAGBench Evaluation)
+# Grounded RAG Assistant (w/ RAGBench Evaluation)
 
 A robust Retrieval-Augmented Generation (RAG) system specialized in processing noisy text and numerical corporate documents (PDF, CSV, XLSX, DOCX, TXT), featuring a modern ChatGPT-style interface and RAGBench evaluation framework.
 
