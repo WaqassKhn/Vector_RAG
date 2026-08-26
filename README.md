@@ -107,4 +107,7 @@ w:/RAG_NTPC/
 └── tests/
     └── test_pipeline.py       # Automated unit tests
 ```
-Frontend under progress
+Frontend under progress + adding agent to sub query and adding multiple model calls based on type of query 
+openrouter
+ollama
+and memory states
