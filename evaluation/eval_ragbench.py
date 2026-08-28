@@ -17,9 +17,10 @@ from config import DEFAULT_CHUNK_SIZE, DEFAULT_CHUNK_OVERLAP, INITIAL_TOP_K, RER
 from pipeline.cleaner import DocumentCleaner
 from pipeline.chunker import DocumentChunker
 from vectorstore.embeddings import EmbeddingManager
-from vectorstore.vector_db import VectorDatabase
+from vectorstore.vector_db import VectorDatabase  # FAISS kept for eval (temp per-sample index)
 from rag.reranker import HybridReranker
-from rag.llm import GeminiLLM
+from rag.openrouter_llm import OpenRouterLLM      # Primary — free models
+from rag.llm import GeminiLLM                     # Fallback if OpenRouter unavailable
 from rag.chain import RAGChain
 from evaluation.grounding_eval import DocumentGroundingEvaluator
 
@@ -46,7 +47,7 @@ def run_ragbench_evaluation(
     # Initialize shared models
     api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
     embedding_mgr = EmbeddingManager(use_gemini=False)
-    llm = GeminiLLM(api_key=api_key)
+    llm = OpenRouterLLM()   # uses free OpenRouter models; falls back to Gemini automatically
     reranker = HybridReranker()
     evaluator = DocumentGroundingEvaluator(llm=llm)
 

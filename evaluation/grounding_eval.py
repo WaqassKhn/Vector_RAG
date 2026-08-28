@@ -1,8 +1,20 @@
 import re
 import json
 from typing import List, Dict, Any, Tuple
-from rag.llm import GeminiLLM
 from config import GROUNDING_PASS_THRESHOLD
+
+# Use OpenRouterLLM as primary judge; GeminiLLM as fallback if needed
+try:
+    from rag.openrouter_llm import OpenRouterLLM
+    HAS_OPENROUTER = True
+except ImportError:
+    HAS_OPENROUTER = False
+
+try:
+    from rag.llm import GeminiLLM
+    HAS_GEMINI = True
+except ImportError:
+    HAS_GEMINI = False
 
 class DocumentGroundingEvaluator:
     """
@@ -36,8 +48,20 @@ Task:
 
 Output ONLY valid JSON:"""
 
-    def __init__(self, llm: GeminiLLM = None):
-        self.llm = llm or GeminiLLM()
+    def __init__(self, llm=None):
+        """
+        Args:
+            llm: Any LLM object with a .generate() method. If None, instantiates
+                 OpenRouterLLM (task='judge') as primary with GeminiLLM as fallback.
+        """
+        if llm is not None:
+            self.llm = llm
+        elif HAS_OPENROUTER:
+            self.llm = OpenRouterLLM()
+        elif HAS_GEMINI:
+            self.llm = GeminiLLM()
+        else:
+            self.llm = None
 
     def evaluate_grounding(
         self,
@@ -132,10 +156,14 @@ Output ONLY valid JSON:"""
         }
 
     def _evaluate_claims_with_llm(self, answer: str, context: str) -> Dict[str, Any]:
-        """Queries Gemini LLM to audit sentence-level claims."""
+        """Uses OpenRouterLLM (task='judge') or GeminiLLM to audit sentence-level claims."""
         prompt = self.CLAIM_EVAL_PROMPT.format(context=context, answer=answer)
         try:
-            res_text = self.llm.generate(prompt=prompt, temperature=0.0)
+            # OpenRouterLLM accepts a 'task' keyword; GeminiLLM does not — handle both
+            if HAS_OPENROUTER and isinstance(self.llm, OpenRouterLLM):
+                res_text = self.llm.generate(prompt=prompt, task="judge", temperature=0.0)
+            else:
+                res_text = self.llm.generate(prompt=prompt, temperature=0.0)
             # Find JSON block
             json_match = re.search(r'\{.*\}', res_text, re.DOTALL)
             if json_match:

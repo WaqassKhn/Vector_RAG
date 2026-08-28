@@ -1,113 +1,178 @@
-# Grounded RAG Assistant (w/ RAGBench Evaluation)
+# ⚡ Grounded RAG Assistant — Production Enterprise Intelligence
 
-A robust Retrieval-Augmented Generation (RAG) system specialized in processing noisy text and numerical corporate documents (PDF, CSV, XLSX, DOCX, TXT), featuring a modern ChatGPT-style interface and RAGBench evaluation framework.
+A production-grade, document-grounded Retrieval-Augmented Generation (RAG) system with a **persistent SQLite database**, **multi-session chat management**, a **multi-tier cognitive memory engine**, and **hybrid BM25 + dense retrieval**.
 
----
-
-## How to Store Your Documents (Without Web App Uploads)
-
-If you do not want to manually upload your files through the web interface every time you run the system, you can store your custom documents permanently inside the repository folder structure:
-
-### Target Upload Directory
-* **Folder Path**: [data/uploads/](file:///w:/RAG_NTPC/data/uploads/)
-* **Supported File Types**: `.pdf`, `.csv`, `.xlsx`, `.docx`, `.txt`, `.md`
-
-### Step-by-Step Guide:
-1. Copy or move your custom PDF / document files into `data/uploads/`.
-2. Ensure you are in the project root directory (`w:/RAG_NTPC`).
-3. Run `streamlit run app.py`.
-4. On startup, the RAG engine **automatically detects, cleans, chunks, and indexes** all files in `data/uploads/` into the local vector database ([data/vector_db/](file:///w:/RAG_NTPC/data/vector_db/)).
-5. *Included Dummy Dataset*: A sample dirty corporate report ([sample_data/dirty_company_report.txt](file:///w:/RAG_NTPC/sample_data/dirty_company_report.txt)) is provided for instant testing out of the box.
+**100% Free Architecture**: Powered by Pinecone Serverless, OpenRouter `:free` model routing, and local MiniLM embeddings.
 
 ---
 
-## ChatGPT-Style UI
+## 🌟 Key Features
 
-Launch the web interface from the project root directory:
+* **Persistent SQLite Database (`data/rag_app.db`)**: Full WAL-mode database storing chat sessions, complete message histories, citations, chunk texts, and cognitive memory. Zero data is lost on reload or restarts.
+* **Multi-Session Chat Manager**: Create new chats, switch between past conversations, rename, and delete chat threads in the sidebar.
+* **Multi-Tier Cognitive Memory Engine**:
+  * **Working Memory**: Recent conversation buffer + periodic LLM compression.
+  * **Episodic Memory**: Past interaction recall using time-decayed vector similarity ($\text{Score} = \text{sim} \times e^{-\lambda \Delta t}$).
+  * **Semantic Memory**: Persistent user preferences and domain fact graphs.
+  * **Procedural Memory**: Pre-compiled task execution workflows for financial comparisons, tabular audits, and executive summaries.
+* **Pinecone Serverless + Local MiniLM**: Vector similarity search in the cloud with zero token cost for embeddings and text storage.
+* **OpenRouter Free Model Routing**: Dynamic task-based LLM routing (`gemma-3-27b:free`, `llama-3.3-70b:free`, `mistral-7b:free`) with automatic fallbacks and Gemini as last resort.
+* **Grounding & Numerical Hallucination Audit**: Token-level claim verification and exact number auditing on every response.
+* **Live Token Quota Meter**: Real-time daily token usage tracking and conservative quota budgeting.
+
+---
+
+## ⚙️ Quick Start & Setup
+
+### 1. Clone & Navigate to Project
 ```bash
-# Make sure your terminal working directory is the project root
+git clone https://github.com/WaqassKhn/Vector_RAG.git
+cd Vector_RAG
+```
+
+### 2. Create & Activate Virtual Environment
+
+#### On Windows (PowerShell / Command Prompt):
+```powershell
+python -m venv venv
+.\venv\Scripts\Activate.ps1
+```
+
+#### On Linux / macOS (Bash / Zsh):
+```bash
+python3 -m venv venv
+source venv/bin/activate
+```
+
+---
+
+### 3. Install Dependencies
+```bash
+pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+---
+
+### 4. Configure Environment Variables (`.env`)
+Copy `.env.example` to `.env` and fill in your keys:
+
+```env
+# Pinecone Serverless (Free starter account at pinecone.io)
+PINECONE_API_KEY=your_pinecone_api_key
+PINECONE_INDEX_NAME=rag-ntpc
+PINECONE_CLOUD=aws
+PINECONE_REGION=us-east-1
+
+# OpenRouter (Free tier at openrouter.ai)
+OPENROUTER_API_KEY=your_openrouter_api_key
+
+# Google Gemini (Optional fallback)
+GEMINI_API_KEY=your_gemini_api_key
+```
+
+---
+
+### 5. Launch the Application
+```bash
 streamlit run app.py
 ```
-
-### Key UI Features:
-- **ChatGPT Conversational Interface**: Rendered responses include grounded text, inline citations `[Source: Filename, Page X]`, expandable source context chunks, and live grounding audits.
-- **Bottom Chat Box**: Type questions naturally in the fixed input box at the bottom of the screen (`st.chat_input`).
-- **Floating Island Settings**: Click **"⚙️ System Parameters & Document Indexing"** at the top of the app to adjust Gemini API keys, chunk sizes, Top-K candidates, and trigger manual re-indexing of `data/uploads/`.
+Open your browser at `http://localhost:8501`.
 
 ---
 
-## ⚙️ Quick Start
+## 🐳 Docker Deployment (One-Command)
 
-### 1. Install Dependencies
+To run the entire stack in Docker with persistent database volumes:
+
 ```bash
-python -m pip install -r requirements.txt
-```
+# Start container with volume persistence
+docker compose up -d --build
 
-### 2. Set Gemini API Key
-Create a `.env` file in the project root or export your environment variable:
-```env
-GEMINI_API_KEY=your_google_gemini_api_key_here
-```
+# View container logs
+docker compose logs -f
 
-### 3. Run Automated Unit Tests
-```bash
-python -m pytest tests/test_pipeline.py
+# Stop containers (all database records & files remain safe in ./data)
+docker compose down
 ```
 
 ---
 
-## 📊 RAGBench Evaluation
+## 🧪 Running Automated Tests
 
-System performance is evaluated using the official **RAGBench** benchmark dataset (`rungalileo/ragbench`).
+Run the full automated test suite:
+```bash
+pytest -v
+```
 
-### Running RAGBench Evaluation
+Test suite coverage:
+* `tests/test_database.py`: SQLite session lifecycle, message persistence, document/chunk storage, and token logs.
+* `tests/test_cognitive_memory.py`: Episodic time decay, semantic preferences/facts, procedural recipes, and cognitive hub.
+* `tests/test_openrouter_llm.py`: Model discovery, generation, and SSE streaming.
+* `tests/test_pinecone_db.py`: Pinecone upsert, metadata filtering, and deletion.
+* `tests/test_pipeline.py`: Parser, chunker, cleaner, hybrid reranker, and numerical grounding auditor.
+
+---
+
+## 📊 RAGBench Benchmark Evaluation
+
+Evaluate retrieval and faithfulness against the official **RAGBench** benchmark:
+
 ```bash
 python evaluation/eval_ragbench.py --subset covidqa --max_samples 10 --output_dir "ragbench eval score"
 ```
 
-### Command Arguments:
-- `--subset`: RAGBench dataset subset (`covidqa`, `finqa`, `hotpotqa`, `msmarco`, `cuad`, etc.).
-- `--max_samples`: Number of samples to evaluate (e.g. `10`, `50`).
-- `--output_dir`: Output folder name for saved scores (default: `"ragbench eval score"`).
+---
 
-### Evaluation Outputs
-Results are automatically exported to:
-* **Output Folder**: [ragbench eval score/](file:///w:/RAG_NTPC/ragbench%20eval%20score/)
-  * `ragbench_<subset>_eval_results.csv`: Per-sample predictions, faithfulness scores, and numerical audits.
-  * `ragbench_<subset>_summary.json`: Benchmark pass rates and average grounding scores.
+## 📁 Repository Structure
+
+```
+Vector_RAG/
+├── config.py                 # Central configurations, model routing, and token budget
+├── requirements.txt           # Python package dependencies
+├── app.py                     # 3-Tab Streamlit Web Application
+├── Dockerfile                 # Container image specification
+├── docker-compose.yml         # Container compose with persistent data volume
+├── .env.example               # Environment variables template
+├── database/
+│   ├── __init__.py
+│   └── db_manager.py          # SQLite persistence manager (sessions, messages, chunks, memory)
+├── pipeline/
+│   ├── cleaner.py             # Unicode, line break & table formatting cleaner
+│   ├── parser.py              # Multi-format document parser (PDF, CSV, XLSX, DOCX, TXT)
+│   └── chunker.py             # Structure- and header-aware chunker
+├── vectorstore/
+│   ├── embeddings.py          # Local MiniLM-L6-v2 embeddings (0 API token cost)
+│   └── pinecone_db.py         # Pinecone Serverless client backed by SQLite DB
+├── rag/
+│   ├── chain.py               # End-to-End RAG chain with streaming & cognitive injection
+│   ├── reranker.py            # Hybrid BM25 + Vector Reciprocal Rank Fusion (RRF)
+│   ├── openrouter_llm.py      # Multi-model router for OpenRouter free-tier LLMs
+│   ├── llm.py                 # Gemini Flash SDK fallback
+│   ├── cache.py               # Semantic Answer Cache
+│   ├── token_counter.py       # Live TokenTracker & quota accounting
+│   ├── agents/
+│   │   ├── query_planner.py   # Decomposes complex queries with procedural guidance
+│   │   └── merge_agent.py     # Synthesizes multi-retrieval results
+│   └── memory/
+│       ├── cognitive_hub.py   # Unified 4-tier cognitive memory coordinator
+│       ├── conversation_memory.py # Working memory with LLM compression
+│       ├── episodic_memory.py # Time-decayed past session recall
+│       ├── semantic_memory.py # User preferences & domain fact graph
+│       └── procedural_memory.py # Domain task execution workflows
+├── evaluation/
+│   ├── eval_ragbench.py       # RAGBench dataset evaluation runner
+│   └── grounding_eval.py      # LLM-as-judge claim verification & numerical auditor
+└── tests/
+    ├── test_database.py       # Database CRUD & persistence tests
+    ├── test_cognitive_memory.py # Multi-tier cognitive memory tests
+    ├── test_openrouter_llm.py # OpenRouter LLM integration tests
+    ├── test_pinecone_db.py    # Pinecone DB integration tests
+    └── test_pipeline.py       # Pipeline component unit tests
+```
 
 ---
 
-## Project Structure
-```
-w:/RAG_NTPC/
-├── config.py                 # Central configurations & default parameters
-├── requirements.txt           # Dependencies
-├── app.py                     # ChatGPT-style Streamlit web application
-├── data/
-│   ├── uploads/               # 👈 PLACE YOUR PERMANENT DOCUMENTS HERE (.pdf, .csv, .docx, .txt)
-│   └── vector_db/             # Local FAISS vector database
-├── pipeline/
-│   ├── cleaner.py             # Unicode, line break & table cleaner
-│   ├── parser.py              # Multi-format document loader (PDF, CSV, DOCX, TXT)
-│   └── chunker.py             # Context & header-aware chunker
-├── vectorstore/
-│   ├── embeddings.py          # Local SentenceTransformers & Gemini Embeddings
-│   └── vector_db.py           # FAISS Vector Index & metadata storage
-├── rag/
-│   ├── reranker.py            # Hybrid BM25 + Vector RRF Reranker
-│   ├── llm.py                 # Gemini Flash SDK integration with 429 backoff
-│   └── chain.py               # Full Grounded RAG chain
-├── evaluation/
-│   ├── eval_ragbench.py       # Official RAGBench dataset evaluator
-│   └── grounding_eval.py      # Claim verification & numerical accuracy auditor
-├── ragbench eval score/       # RAGBENCH EVALUATION SCORES SAVED HERE
-├── sample_data/
-│   └── dirty_company_report.txt # 1 Sample Dummy Dataset for testing
-└── tests/
-    └── test_pipeline.py       # Automated unit tests
-```
-Frontend under progress + adding agent to sub query and adding multiple model calls based on type of query 
-openrouter
-ollama
-and memory states
+## 🔒 License & Credits
+
+Built with [Streamlit](https://streamlit.io), [Pinecone](https://pinecone.io), [OpenRouter](https://openrouter.ai), and [Sentence-Transformers](https://sbert.net).

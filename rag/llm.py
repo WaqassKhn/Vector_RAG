@@ -71,3 +71,43 @@ class GeminiLLM:
                     time.sleep(wait_time)
                 else:
                     raise RuntimeError(f"Gemini API generation error: {err_str}")
+
+    def streaming_generate(
+        self,
+        prompt: str,
+        system_instruction: Optional[str] = None,
+        temperature: float = 0.1,
+    ):
+        """
+        Yields text chunks from the Gemini streaming API.
+        Used as the last-resort streaming fallback when all OpenRouter models fail.
+        Compatible with Streamlit's st.write_stream().
+        """
+        if not HAS_GEMINI_SDK:
+            yield "[Error] google-genai package not installed."
+            return
+        if not self.client:
+            yield "[Error] Gemini API key missing."
+            return
+
+        config = types.GenerateContentConfig(
+            temperature=temperature,
+            system_instruction=system_instruction if system_instruction else None
+        )
+
+        try:
+            for chunk in self.client.models.generate_content_stream(
+                model=self.model_name,
+                contents=prompt,
+                config=config,
+            ):
+                if chunk.text:
+                    yield chunk.text
+        except Exception as e:
+            err_str = str(e)
+            # Non-streaming fallback if streaming fails
+            try:
+                full_text = self.generate(prompt, system_instruction, temperature)
+                yield full_text
+            except Exception:
+                yield f"[Error] Gemini streaming failed: {err_str}"

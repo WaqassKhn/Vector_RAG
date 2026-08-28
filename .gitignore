@@ -7,6 +7,7 @@ ENV/
 # Environment & Secret API Keys
 .env
 .env.*
+!.env.example
 
 # Python Cache & Build Artifacts
 __pycache__/
@@ -30,6 +31,9 @@ sample_data/
 # Scratch, Cloned Repositories & Temporary Workspace
 scratch/
 tmp/
+DEVELOPMENT_PLAN.md
+DEPLOYMENT_GUIDE.md
+TOKEN_BUDGET_GUIDE.md
 
 # Evaluation Outputs, Experiment Summaries & Logs
 evals/
