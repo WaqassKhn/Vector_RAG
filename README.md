@@ -1,4 +1,4 @@
-# ⚡ Grounded RAG Assistant — Production Enterprise Intelligence
+# Grounded RAG Assistant — Production Enterprise Intelligence
 
 A production-grade, document-grounded Retrieval-Augmented Generation (RAG) system with a **persistent SQLite database**, **multi-session chat management**, a **multi-tier cognitive memory engine**, and **hybrid BM25 + dense retrieval**.
 
@@ -172,6 +172,8 @@ Vector_RAG/
 ```
 
 ---
+
+:free models can be unavailable at any time, please check openrouter website for the current free models you can use for this project.
 
 ## 🔒 License & Credits
 
