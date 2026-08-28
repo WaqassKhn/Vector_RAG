@@ -472,11 +472,6 @@ def render_sidebar():
                         f'<span class="model-down">●</span> **{task}**: offline',
                         unsafe_allow_html=True,
                     )
-                else:
-                    st.markdown(
-                        f'<span class="model-down">●</span> **{task}**: offline',
-                        unsafe_allow_html=True,
-                    )
 
         # 5. Quick Stats
         vdb = get_pinecone_db()
