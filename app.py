@@ -3,13 +3,13 @@ app.py — RAG_NTPC Production Application with Persistent Multi-Session Memory
 ─────────────────────────────────────────────────────────────────────────────
 Features:
   - Persistent SQLite Database (data/rag_app.db): Zero data loss on interface close or reload.
-  - Multi-Session Chat Manager: Create, switch, rename, and delete conversation threads.
+  - Multi-Session Chat Manager: Gemini/ChatGPT-style flat sidebar conversation list.
   - Multi-Tier Cognitive Memory Engine: Working, Episodic, Semantic, and Procedural memory.
-  - 3-Tab Streamlit UI:
-      Tab 1: 💬 Chat      — streaming RAG chat with grounding audit, citations, and session history
-      Tab 2: 📁 Documents — upload, index, and manage documents with 0 API token cost
-      Tab 3: ⚙️ Settings  — cognitive memory explorer, model status, token budget, database inspector
-  - Sidebar: Session selector + token quota meter + cognitive memory summary + active models.
+  - 3-Tab Minimalist UI:
+      Tab 1: Chat      — streaming RAG chat with grounding audit, citations, and session history
+      Tab 2: Documents — upload, index, and manage documents
+      Tab 3: Settings  — cognitive memory explorer, model status, database controls
+  - Sidebar: Gemini-style chat list + cognitive memory summary + active models.
 """
 
 import os
@@ -39,7 +39,6 @@ from config import (
     VECTOR_DB_DIR, UPLOADS_DIR, DB_PATH,
     INITIAL_TOP_K, RERANKED_TOP_K,
     DEFAULT_CHUNK_SIZE, DEFAULT_CHUNK_OVERLAP,
-    GEMINI_PRO_DAILY_REQUEST_CAP, GEMINI_FLASH_DAILY_REQUEST_CAP,
 )
 from database.db_manager import DatabaseManager, get_db
 from pipeline.parser import DocumentParser
@@ -54,8 +53,9 @@ from rag.memory.cognitive_hub import CognitiveMemoryHub
 from rag.cache import SemanticAnswerCache
 from rag.agents.query_planner import QueryPlannerAgent
 from rag.agents.merge_agent import MergeAgent
-from rag.token_counter import TokenTracker
 from evaluation.grounding_eval import DocumentGroundingEvaluator
+from rag.tracer import ExecutionTracer
+from rag.error_handler import ErrorDiagnosticManager
 
 logging.basicConfig(level=logging.WARNING)
 
@@ -63,138 +63,187 @@ logging.basicConfig(level=logging.WARNING)
 
 st.set_page_config(
     page_title="RAG Assistant — Document Intelligence",
-    page_icon="🤖",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
+# Soft, minimalist, dark aesthetic
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
 
-* { font-family: 'Inter', sans-serif; }
+* {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    letter-spacing: -0.01em;
+}
 
+/* Background */
 .stApp {
-    background: linear-gradient(135deg, #0d1117 0%, #0f1923 50%, #0d1117 100%);
+    background-color: #0d1117;
+    background-image: radial-gradient(circle at 50% 0%, #161b22 0%, #0d1117 75%);
     color: #e6edf3;
 }
 
 /* Sidebar */
 [data-testid="stSidebar"] {
-    background: rgba(22, 27, 34, 0.95);
-    border-right: 1px solid #30363d;
+    background-color: #161b22;
+    border-right: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+[data-testid="stSidebar"] hr {
+    margin: 1rem 0;
+    border-color: rgba(255, 255, 255, 0.08);
+}
+
+/* Gemini-style conversation buttons in sidebar */
+.chat-list-container {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-top: 8px;
+    margin-bottom: 12px;
+}
+
+.stButton button {
+    border-radius: 8px;
+    font-size: 0.88rem;
+    font-weight: 500;
+    transition: all 0.15s ease-in-out;
+}
+
+/* Active chat highlight */
+.chat-btn-active button {
+    background-color: rgba(56, 139, 253, 0.15) !important;
+    color: #58a6ff !important;
+    border: 1px solid rgba(56, 139, 253, 0.4) !important;
+    font-weight: 600 !important;
+}
+
+.chat-btn-inactive button {
+    background-color: transparent !important;
+    color: #c9d1d9 !important;
+    border: 1px solid transparent !important;
+    text-align: left !important;
+    justify-content: flex-start !important;
+}
+
+.chat-btn-inactive button:hover {
+    background-color: rgba(255, 255, 255, 0.06) !important;
+    color: #ffffff !important;
+    border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* Primary buttons */
+button[kind="primary"], .stButton > button[type="primary"] {
+    background: #238636 !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 8px;
+    font-weight: 500;
+}
+
+button[kind="primary"]:hover, .stButton > button[type="primary"]:hover {
+    background: #2ea043 !important;
+}
+
+/* Secondary buttons */
+button[kind="secondary"], .stButton > button[type="secondary"] {
+    background-color: rgba(255, 255, 255, 0.05) !important;
+    color: #c9d1d9 !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 8px;
+}
+
+button[kind="secondary"]:hover, .stButton > button[type="secondary"]:hover {
+    background-color: rgba(255, 255, 255, 0.1) !important;
+    color: #ffffff !important;
 }
 
 /* Tabs */
 .stTabs [data-baseweb="tab-list"] {
-    background: rgba(22, 27, 34, 0.8);
+    background: rgba(22, 27, 34, 0.7);
     border-radius: 10px;
     padding: 4px;
     gap: 4px;
-    border: 1px solid #30363d;
+    border: 1px solid rgba(255, 255, 255, 0.08);
 }
+
 .stTabs [data-baseweb="tab"] {
     background: transparent;
-    border-radius: 8px;
+    border-radius: 6px;
     color: #8b949e;
     font-weight: 500;
-    padding: 8px 20px;
+    padding: 6px 18px;
     border: none;
+    font-size: 0.9rem;
 }
+
 .stTabs [aria-selected="true"] {
-    background: rgba(88, 166, 255, 0.15) !important;
+    background: rgba(56, 139, 253, 0.15) !important;
     color: #58a6ff !important;
-    border: 1px solid rgba(88, 166, 255, 0.3) !important;
+    border: 1px solid rgba(56, 139, 253, 0.3) !important;
 }
 
 /* Chat messages */
 [data-testid="stChatMessage"] {
-    background: rgba(22, 27, 34, 0.6);
-    border: 1px solid #30363d;
-    border-radius: 12px;
+    background: rgba(22, 27, 34, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 10px;
     margin-bottom: 8px;
-    backdrop-filter: blur(10px);
 }
 
 /* Metric cards */
 [data-testid="stMetric"] {
-    background: rgba(22, 27, 34, 0.8);
-    border: 1px solid #30363d;
-    border-radius: 10px;
-    padding: 12px;
-}
-
-/* Buttons */
-.stButton > button {
-    background: linear-gradient(135deg, #238636, #2ea043);
-    color: white;
-    border: none;
+    background: rgba(22, 27, 34, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 8px;
-    font-weight: 600;
-    transition: all 0.2s ease;
-}
-.stButton > button:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(35, 134, 54, 0.4);
-}
-
-/* Secondary / Danger buttons */
-button[kind="secondary"] {
-    background: rgba(218, 54, 51, 0.15) !important;
-    color: #f85149 !important;
-    border: 1px solid rgba(218, 54, 51, 0.3) !important;
+    padding: 10px;
 }
 
 /* Badges */
 .badge-pass {
-    background: linear-gradient(135deg, #238636, #2ea043);
-    color: white;
-    padding: 3px 12px;
-    border-radius: 20px;
-    font-size: 0.75rem;
-    font-weight: 700;
-    letter-spacing: 0.05em;
-}
-.badge-fail {
-    background: linear-gradient(135deg, #da3633, #f85149);
-    color: white;
-    padding: 3px 12px;
-    border-radius: 20px;
-    font-size: 0.75rem;
-    font-weight: 700;
-    letter-spacing: 0.05em;
-}
-.badge-cache {
-    background: linear-gradient(135deg, #1f6feb, #388bfd);
-    color: white;
-    padding: 3px 12px;
-    border-radius: 20px;
-    font-size: 0.75rem;
-    font-weight: 700;
-}
-.badge-token {
-    background: rgba(110, 118, 129, 0.2);
-    color: #58a6ff;
+    background: rgba(46, 160, 67, 0.2);
+    color: #3fb950;
     padding: 2px 8px;
-    border-radius: 6px;
+    border-radius: 4px;
     font-size: 0.75rem;
     font-weight: 600;
-    border: 1px solid rgba(88, 166, 255, 0.3);
+    border: 1px solid rgba(46, 160, 67, 0.3);
+}
+
+.badge-fail {
+    background: rgba(248, 81, 73, 0.2);
+    color: #f85149;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border: 1px solid rgba(248, 81, 73, 0.3);
+}
+
+.badge-cache {
+    background: rgba(56, 139, 253, 0.2);
+    color: #58a6ff;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    border: 1px solid rgba(56, 139, 253, 0.3);
 }
 
 /* Expanders */
 details {
-    background: rgba(22, 27, 34, 0.5);
-    border: 1px solid #30363d;
+    background: rgba(22, 27, 34, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 8px;
-    padding: 4px 12px;
+    padding: 4px 10px;
 }
 
 /* File uploader */
 [data-testid="stFileUploader"] {
-    border: 2px dashed #30363d;
-    border-radius: 12px;
-    padding: 20px;
+    border: 1px dashed rgba(255, 255, 255, 0.15);
+    border-radius: 10px;
+    padding: 16px;
     background: rgba(22, 27, 34, 0.3);
 }
 
@@ -203,11 +252,10 @@ code {
     background: rgba(110, 118, 129, 0.15);
     color: #e6edf3;
     border-radius: 4px;
-    padding: 2px 6px;
+    padding: 2px 5px;
     font-size: 0.85em;
 }
 
-/* Model status dots */
 .model-live { color: #3fb950; font-size: 0.8rem; }
 .model-down { color: #f85149; font-size: 0.8rem; }
 </style>
@@ -216,7 +264,7 @@ code {
 
 # ─── Cached singletons ────────────────────────────────────────────────────────
 
-@st.cache_resource(show_spinner="Initializing persistent database...")
+@st.cache_resource(show_spinner="Initializing database...")
 def get_database_manager():
     return get_db()
 
@@ -248,8 +296,6 @@ def init_session_state():
         st.session_state.cognitive_hub = CognitiveMemoryHub(llm=llm, db=db)
     if "cache" not in st.session_state:
         st.session_state.cache = SemanticAnswerCache()
-    if "token_tracker" not in st.session_state:
-        st.session_state.token_tracker = TokenTracker()
     if "retrieval_top_k" not in st.session_state:
         st.session_state.retrieval_top_k = INITIAL_TOP_K
     if "rerank_top_k" not in st.session_state:
@@ -266,7 +312,7 @@ def init_session_state():
 
 # ─── Indexing helper ──────────────────────────────────────────────────────────
 
-def index_file(fpath: Path, vdb: PineconeDB, emb: EmbeddingManager, tracker: TokenTracker) -> int:
+def index_file(fpath: Path, vdb: PineconeDB, emb: EmbeddingManager) -> int:
     """Parses, chunks, embeds, and upserts one file. Returns chunk count."""
     parsed = DocumentParser.parse_file(str(fpath))
     chunker = DocumentChunker(
@@ -279,98 +325,81 @@ def index_file(fpath: Path, vdb: PineconeDB, emb: EmbeddingManager, tracker: Tok
     texts = [c["text"] for c in chunks]
     vecs = emb.embed_texts(texts)
     vdb.upsert_chunks(chunks, vecs)
-    
-    # Record local tokens saved (0 API cost)
-    tracker.record_local_embedding(texts)
     return len(chunks)
 
 
-# ─── Sidebar ──────────────────────────────────────────────────────────────────
+# ─── Sidebar (Gemini Style) ───────────────────────────────────────────────────
 
 def render_sidebar():
     db = get_database_manager()
     with st.sidebar:
-        st.markdown("## 🤖 RAG Assistant")
-        st.caption("Persistent Document Intelligence Engine")
+        st.markdown("### RAG Assistant")
+        st.caption("Document Intelligence Engine")
         st.divider()
 
-        # 1. Chat Sessions Manager
-        st.markdown("### 💬 Conversations")
-        sessions = db.list_sessions(limit=30)
-        current_sid = st.session_state.get("active_session_id")
-
-        if st.button("➕ New Conversation", use_container_width=True, type="primary"):
+        # 1. New Chat Button
+        if st.button("+ New Chat", use_container_width=True, type="primary"):
             new_sid = db.create_session(title="New Conversation")
             st.session_state.active_session_id = new_sid
             st.rerun()
 
+        # 2. Gemini-Style Chat History List (No dropdown)
+        st.markdown("##### Recent Chats")
+        sessions = db.list_sessions(limit=30)
+        current_sid = st.session_state.get("active_session_id")
+
         if sessions:
-            session_titles = {s["id"]: s["title"] for s in sessions}
-            session_ids = list(session_titles.keys())
-            current_index = session_ids.index(current_sid) if current_sid in session_ids else 0
+            for s in sessions:
+                sid = s["id"]
+                stitle = s["title"]
+                is_active = (sid == current_sid)
 
-            selected_sid = st.selectbox(
-                "Select Conversation",
-                options=session_ids,
-                format_func=lambda sid: f"📝 {session_titles[sid]}",
-                index=current_index,
-                label_visibility="collapsed",
-            )
+                # Truncate title cleanly
+                display_title = stitle if len(stitle) <= 26 else stitle[:24] + "..."
 
-            if selected_sid != current_sid:
-                st.session_state.active_session_id = selected_sid
-                st.rerun()
-
-            # Session rename & delete controls
-            with st.expander("⚙️ Manage Active Chat", expanded=False):
-                active_sess = db.get_session(selected_sid)
-                if active_sess:
-                    new_title = st.text_input("Rename title", value=active_sess["title"])
-                    col_ren, col_del = st.columns(2)
-                    if col_ren.button("Save Title", use_container_width=True):
-                        db.update_session_title(selected_sid, new_title)
+                # Style as active or inactive
+                btn_type = "primary" if is_active else "secondary"
+                if st.button(
+                    display_title,
+                    key=f"chat_item_{sid}",
+                    use_container_width=True,
+                    type=btn_type,
+                    help=stitle,
+                ):
+                    if sid != current_sid:
+                        st.session_state.active_session_id = sid
                         st.rerun()
-                    if col_del.button("🗑️ Delete", kind="secondary", use_container_width=True):
-                        db.delete_session(selected_sid)
+
+            # Active chat settings (inline expander for rename / delete)
+            with st.expander("Manage Active Chat", expanded=False):
+                active_sess = db.get_session(current_sid)
+                if active_sess:
+                    new_title = st.text_input("Title", value=active_sess["title"], label_visibility="collapsed")
+                    col_ren, col_del = st.columns(2)
+                    if col_ren.button("Save", use_container_width=True):
+                        db.update_session_title(current_sid, new_title)
+                        st.rerun()
+                    if col_del.button("Delete", type="secondary", use_container_width=True):
+                        db.delete_session(current_sid)
                         remaining = db.list_sessions(limit=1)
                         st.session_state.active_session_id = remaining[0]["id"] if remaining else db.create_session()
                         st.rerun()
 
         st.divider()
 
-        # 2. Token Budget & Daily Quota Meter
-        tracker: TokenTracker = st.session_state.token_tracker
-        t_summary = tracker.get_summary()
-        with st.expander("📊 Daily Token Budget & Quota", expanded=True):
-            col_t1, col_t2 = st.columns(2)
-            col_t1.metric("Tokens Used", f"{t_summary['total_tokens']:,}")
-            col_t2.metric("Total Cost", "$0.00", help="100% Free Tier Architecture")
-
-            st.caption(f"**Gemini Pro Quota (50 RPD Cap):** {t_summary['pro_quota_used_pct']}% used")
-            st.progress(t_summary['pro_quota_used_pct'] / 100.0)
-
-            st.caption(f"**Gemini Flash Quota (1500 RPD Cap):** {t_summary['flash_quota_used_pct']}% used")
-            st.progress(t_summary['flash_quota_used_pct'] / 100.0)
-
-            st.caption(f"💾 **Tokens Saved (Local + Cache):** {t_summary['saved_local_embed_tokens'] + t_summary['saved_cache_tokens']:,}")
-
-        st.divider()
-
         # 3. Cognitive Memory Summary Panel
         hub: CognitiveMemoryHub = st.session_state.cognitive_hub
         mem_summary = hub.get_dashboard_summary()
-        with st.expander("🧠 Cognitive Memory Hub", expanded=False):
-            st.markdown(f"**Working Memory:** `{mem_summary['working_memory']['recent_turns']}` recent turns")
-            st.markdown(f"**Episodic Recall:** `{mem_summary['episodic_memory']['total_episodes']}` past episodes")
+        with st.expander("Cognitive Memory Hub", expanded=False):
+            st.markdown(f"**Working Memory:** `{mem_summary['working_memory']['recent_turns']}` turns")
+            st.markdown(f"**Episodic Recall:** `{mem_summary['episodic_memory']['total_episodes']}` episodes")
             st.markdown(f"**User Preferences:** `{mem_summary['semantic_memory']['total_preferences']}` active")
             st.markdown(f"**Domain Facts:** `{mem_summary['semantic_memory']['total_facts']}` learned")
-            st.markdown(f"**Task Recipes:** `{mem_summary['procedural_memory']['total_recipes']}` available")
+            st.markdown(f"**Task Recipes:** `{mem_summary['procedural_memory']['total_recipes']}` recipes")
 
-        st.divider()
-
-        # 4. Active model status
+        # 4. Active Models Status
         llm = get_openrouter_llm()
-        with st.expander("🔀 Active Models", expanded=False):
+        with st.expander("Active Models", expanded=False):
             active = llm.get_active_models()
             for task, model in active.items():
                 if model:
@@ -381,13 +410,11 @@ def render_sidebar():
                     )
                 else:
                     st.markdown(
-                        f'<span class="model-down">●</span> **{task}**: no model available',
+                        f'<span class="model-down">●</span> **{task}**: offline',
                         unsafe_allow_html=True,
                     )
 
-        st.divider()
-
-        # 5. Quick stats
+        # 5. Quick Stats
         vdb = get_pinecone_db()
         stats = vdb.get_stats()
         cache: SemanticAnswerCache = st.session_state.cache
@@ -395,7 +422,7 @@ def render_sidebar():
 
         col1, col2 = st.columns(2)
         col1.metric("Vectors", f"{stats['total_vector_count']:,}")
-        col2.metric("Cache hits", cache_stats["hit_count"])
+        col2.metric("Cache Hits", cache_stats["hit_count"])
 
 
 # ─── Tab 1: Chat ──────────────────────────────────────────────────────────────
@@ -408,7 +435,6 @@ def render_chat_tab():
     reranker = get_reranker()
     hub: CognitiveMemoryHub = st.session_state.cognitive_hub
     cache: SemanticAnswerCache = st.session_state.cache
-    tracker: TokenTracker = st.session_state.token_tracker
     evaluator = DocumentGroundingEvaluator(llm=llm)
 
     rag_chain = RAGChain(
@@ -441,7 +467,7 @@ def render_chat_tab():
     # Auto-title session if it's currently default
     active_sess = db.get_session(current_sid)
     if active_sess and active_sess["title"] in ("New Conversation", "New Chat"):
-        new_title = query[:32] + ("..." if len(query) > 32 else "")
+        new_title = query[:28] + ("..." if len(query) > 28 else "")
         db.update_session_title(current_sid, new_title)
 
     # Save and display user message in DB
@@ -454,185 +480,236 @@ def render_chat_tab():
         st.markdown(query)
 
     with st.chat_message("assistant"):
-        # 1. Embed query
-        query_vec = emb.embed_query(query)
+        tracer = ExecutionTracer()
+        try:
+            # 1. Embed query
+            embed_span = tracer.start_span("embed_query", component="embedding", inputs={"query": query})
+            query_vec = emb.embed_query(query)
+            tracer.finish_span(embed_span, outputs={"vector_dim": len(query_vec)})
 
-        # 2. Check semantic cache
-        cache_hit = cache.lookup(query_vec)
-        if cache_hit:
-            st.markdown(cache_hit["answer"])
-            st.markdown(
-                f'<span class="badge-cache">⚡ Cache Hit ({cache_hit["cache_similarity"]:.2%} similarity)</span> '
-                f'<span class="badge-token">0 API Tokens Consumed</span>',
-                unsafe_allow_html=True,
-            )
-            tracker.record_cache_hit(query, cache_hit["answer"])
+            # 2. Check semantic cache
+            cache_span = tracer.start_span("cache_lookup", component="cache")
+            cache_hit = cache.lookup(query_vec)
+            if cache_hit:
+                tracer.finish_span(cache_span, outputs={"cache_hit": True, "similarity": cache_hit["cache_similarity"]})
+                tracer.finish()
+                st.markdown(cache_hit["answer"])
+                st.markdown(
+                    f'<span class="badge-cache">[Cache Hit: {cache_hit["cache_similarity"]:.1%}]</span>',
+                    unsafe_allow_html=True,
+                )
 
-            if cache_hit.get("citations"):
-                st.markdown("**Citations:** " + ", ".join([f"`{c}`" for c in cache_hit["citations"]]))
+                if cache_hit.get("citations"):
+                    st.markdown("**Citations:** " + ", ".join([f"`{c}`" for c in cache_hit["citations"]]))
 
-            # Save assistant cache hit to database
-            db.save_message(
-                session_id=current_sid,
-                role="assistant",
-                content=cache_hit["answer"],
-                citations=cache_hit["citations"],
-                grounding_score=1.0,
-                grounding_passed=True,
-                tokens_used=0,
-            )
-            # Update cognitive memory
-            hub.post_interaction_update(
+                # Save assistant cache hit to database
+                db.save_message(
+                    session_id=current_sid,
+                    role="assistant",
+                    content=cache_hit["answer"],
+                    citations=cache_hit["citations"],
+                    grounding_score=1.0,
+                    grounding_passed=True,
+                    tokens_used=0,
+                )
+                hub.post_interaction_update(
+                    query=query,
+                    answer=cache_hit["answer"],
+                    citations=cache_hit["citations"],
+                    query_embedding=query_vec,
+                    session_id=current_sid,
+                )
+
+                _render_execution_trace(tracer)
+                return
+
+            tracer.finish_span(cache_span, outputs={"cache_hit": False})
+
+            # 3. Assemble Cognitive Memory Context
+            mem_span = tracer.start_span("cognitive_memory_assembly", component="memory")
+            cognitive_context = hub.build_cognitive_context(
                 query=query,
-                answer=cache_hit["answer"],
-                citations=cache_hit["citations"],
                 query_embedding=query_vec,
                 session_id=current_sid,
             )
-            return
+            tracer.finish_span(mem_span, outputs={"memory_context_len": len(cognitive_context)})
 
-        # 3. Assemble Cognitive Memory Context (Working, Episodic, Semantic, Procedural)
-        cognitive_context = hub.build_cognitive_context(
-            query=query,
-            query_embedding=query_vec,
-            session_id=current_sid,
-        )
+            # 4. Plan the query
+            matched_recipe = hub.procedural_memory.match_recipe(query)
+            procedural_hint = hub.procedural_memory.get_context_string(query) if matched_recipe else None
 
-        # 4. Plan the query (incorporating procedural recipe guidance)
-        matched_recipe = hub.procedural_memory.match_recipe(query)
-        procedural_hint = hub.procedural_memory.get_context_string(query) if matched_recipe else None
+            planner_span = tracer.start_span("query_planning", component="query_planner", inputs={"query": query, "procedural_hint": bool(procedural_hint)})
+            with st.spinner("Planning retrieval strategy..."):
+                plan = planner.plan(query, procedural_hint=procedural_hint)
+            tracer.finish_span(planner_span, outputs=plan)
 
-        with st.spinner("🧠 Planning retrieval strategy..."):
-            plan = planner.plan(query, procedural_hint=procedural_hint)
-            tracker.record_query(query, json.dumps(plan), task="decompose")
+            # 5. Execute retrieval + generation
+            formatted_context = ""
 
-        # 5. Execute retrieval + generation
-        formatted_context = ""
+            if plan["complexity"] == "simple" or len(plan["sub_queries"]) == 1:
+                # Simple path: stream directly
+                answer_parts = []
+                answer_placeholder = st.empty()
+                reranked_chunks = []
+                citations = []
 
-        if plan["complexity"] == "simple" or len(plan["sub_queries"]) == 1:
-            # ── Simple path: stream directly ──
-            answer_parts = []
-            answer_placeholder = st.empty()
-            reranked_chunks = []
-            citations = []
+                for event_type, data in rag_chain.run_stream(
+                    query=plan["sub_queries"][0],
+                    initial_top_k=st.session_state.retrieval_top_k,
+                    rerank_top_k=st.session_state.rerank_top_k,
+                    filter_filenames=plan.get("doc_scope"),
+                    memory_context=cognitive_context,
+                    tracer=tracer,
+                ):
+                    if event_type == "context":
+                        reranked_chunks = data
+                    elif event_type == "token":
+                        answer_parts.append(data)
+                        answer_placeholder.markdown("".join(answer_parts) + "▌")
+                    elif event_type == "done":
+                        citations = data["citations"]
+                        reranked_chunks = data.get("reranked_chunks", reranked_chunks)
+                        formatted_context = data.get("formatted_context", "")
 
-            for event_type, data in rag_chain.run_stream(
-                query=plan["sub_queries"][0],
-                initial_top_k=st.session_state.retrieval_top_k,
-                rerank_top_k=st.session_state.rerank_top_k,
-                filter_filenames=plan.get("doc_scope"),
-                memory_context=cognitive_context,
-            ):
-                if event_type == "context":
-                    reranked_chunks = data
-                elif event_type == "token":
-                    answer_parts.append(data)
-                    answer_placeholder.markdown("".join(answer_parts) + "▌")
-                elif event_type == "done":
-                    citations = data["citations"]
-                    reranked_chunks = data.get("reranked_chunks", reranked_chunks)
-                    formatted_context = data.get("formatted_context", "")
+                answer = "".join(answer_parts)
+                answer_placeholder.markdown(answer)
 
-            answer = "".join(answer_parts)
-            answer_placeholder.markdown(answer)
+            else:
+                # Complex path: parallel sub-queries → merge
+                with st.spinner(f"Running {len(plan['sub_queries'])} retrieval passes..."):
+                    sub_results = []
+                    for sub_q in plan["sub_queries"]:
+                        result = rag_chain.run(
+                            query=sub_q,
+                            initial_top_k=st.session_state.retrieval_top_k,
+                            rerank_top_k=st.session_state.rerank_top_k,
+                            filter_filenames=plan.get("doc_scope"),
+                            memory_context=cognitive_context,
+                            tracer=tracer,
+                        )
+                        sub_results.append(result)
 
-            # Record generation token usage
-            t_delta = tracker.record_query(query, answer, context=formatted_context, task="answer")
+                merge_span = tracer.start_span("merge_synthesis", component="merge_agent", inputs={"sub_queries_count": len(sub_results)})
+                with st.spinner("Synthesizing answer..."):
+                    merged = merger.merge(original_query=query, sub_results=sub_results)
+                tracer.finish_span(merge_span, outputs={"citations_count": len(merged.get("citations", []))})
 
-        else:
-            # ── Complex path: parallel sub-queries → merge ──
-            with st.spinner(f"🔍 Running {len(plan['sub_queries'])} retrieval passes..."):
-                sub_results = []
-                for sub_q in plan["sub_queries"]:
-                    result = rag_chain.run(
-                        query=sub_q,
-                        initial_top_k=st.session_state.retrieval_top_k,
-                        rerank_top_k=st.session_state.rerank_top_k,
-                        filter_filenames=plan.get("doc_scope"),
-                        memory_context=cognitive_context,
-                    )
-                    sub_results.append(result)
+                answer = merged["answer"]
+                reranked_chunks = merged["reranked_chunks"]
+                citations = merged["citations"]
+                formatted_context = merged.get("formatted_context", "")
+                st.markdown(answer)
 
-            with st.spinner("🔗 Synthesizing multi-document answer..."):
-                merged = merger.merge(original_query=query, sub_results=sub_results)
+                if merged.get("sub_queries"):
+                    with st.expander("Query Decomposition"):
+                        for i, sq in enumerate(merged["sub_queries"], 1):
+                            st.markdown(f"**Sub-query {i}:** {sq}")
 
-            answer = merged["answer"]
-            reranked_chunks = merged["reranked_chunks"]
-            citations = merged["citations"]
-            formatted_context = merged.get("formatted_context", "")
-            st.markdown(answer)
+            # Citations
+            if citations:
+                st.markdown("**Citations:** " + ", ".join([f"`{c}`" for c in citations]))
 
-            t_delta = tracker.record_query(query, answer, context=formatted_context, task="answer")
+            # Context chunks expander
+            with st.expander("Retrieved Context Chunks"):
+                for idx, ch in enumerate(reranked_chunks):
+                    st.markdown(f"**Chunk #{idx+1}** — `{ch['filename']}` Page {ch['page_number']}")
+                    st.code(ch["text"], language="text")
 
-            if merged.get("sub_queries"):
-                with st.expander("🔀 Query Decomposition"):
-                    for i, sq in enumerate(merged["sub_queries"], 1):
-                        st.markdown(f"**Sub-query {i}:** {sq}")
+            # Grounding audit
+            eval_span = tracer.start_span("grounding_evaluation", component="eval")
+            with st.spinner("Running grounding audit..."):
+                eval_res = evaluator.evaluate_grounding(
+                    query=query,
+                    answer=answer,
+                    retrieved_chunks=reranked_chunks,
+                )
+            tracer.finish_span(eval_span, outputs={"grounding_score": eval_res["overall_grounding_score"], "passed": eval_res["is_passed"]})
 
-        # Citations
-        if citations:
-            st.markdown("**Citations:** " + ", ".join([f"`{c}`" for c in citations]))
+            badge = (
+                '<span class="badge-pass">PASSED</span>'
+                if eval_res["is_passed"]
+                else '<span class="badge-fail">FAILED</span>'
+            )
+            with st.expander("Grounding Audit"):
+                st.markdown(
+                    f"**Score:** {eval_res['overall_grounding_score']*100:.1f}% | "
+                    f"**Faithfulness:** {eval_res['faithfulness_score']*100:.1f}% | "
+                    f"**Numerical:** {eval_res['numerical_accuracy_score']*100:.1f}% | "
+                    f"Status: {badge}",
+                    unsafe_allow_html=True,
+                )
+                if eval_res["unsupported_numbers"]:
+                    st.error("Unsupported numbers: " + ", ".join(eval_res["unsupported_numbers"]))
+                else:
+                    st.success("Zero numerical hallucinations detected.")
 
-        # Context chunks expander
-        with st.expander("📚 Retrieved Context Chunks"):
-            for idx, ch in enumerate(reranked_chunks):
-                st.markdown(f"**Chunk #{idx+1}** — `{ch['filename']}` Page {ch['page_number']}")
-                st.code(ch["text"], language="text")
+            # Store in cache
+            cache.store(query_vec, answer, citations, query_text=query)
 
-        # Grounding audit
-        with st.spinner("🧪 Running grounding audit..."):
-            eval_res = evaluator.evaluate_grounding(
+            # Update Cognitive Memory Hub
+            hub.post_interaction_update(
                 query=query,
                 answer=answer,
-                retrieved_chunks=reranked_chunks,
+                citations=citations,
+                query_embedding=query_vec,
+                session_id=current_sid,
+                model=getattr(llm, "last_model_used", "openrouter"),
+                task="answer",
             )
-            tracker.record_query(query, json.dumps(eval_res), context=formatted_context, task="judge")
 
-        badge = (
-            '<span class="badge-pass">✓ PASSED</span>'
-            if eval_res["is_passed"]
-            else '<span class="badge-fail">✗ FAILED</span>'
-        )
-        token_badge = f'<span class="badge-token">~{t_delta["total_tokens"]} Tokens</span>'
-        with st.expander("🧪 Grounding Audit"):
-            st.markdown(
-                f"**Score:** {eval_res['overall_grounding_score']*100:.1f}% | "
-                f"**Faithfulness:** {eval_res['faithfulness_score']*100:.1f}% | "
-                f"**Numerical:** {eval_res['numerical_accuracy_score']*100:.1f}% | "
-                f"Status: {badge} | Cost: {token_badge}",
-                unsafe_allow_html=True,
+            # Persist assistant message to SQLite Database
+            db.save_message(
+                session_id=current_sid,
+                role="assistant",
+                content=answer,
+                citations=citations,
+                grounding_score=eval_res["overall_grounding_score"],
+                grounding_passed=eval_res["is_passed"],
+                tokens_used=0,
             )
-            if eval_res["unsupported_numbers"]:
-                st.error("⚠️ Unsupported numbers: " + ", ".join(eval_res["unsupported_numbers"]))
-            else:
-                st.success("✓ Zero numerical hallucinations detected.")
 
-        # Store in cache
-        cache.store(query_vec, answer, citations, query_text=query)
+            # Complete and render execution trace
+            tracer.finish()
+            _render_execution_trace(tracer)
 
-        # Update Cognitive Memory Hub (Working turn, Episodic record, Semantic facts)
-        hub.post_interaction_update(
-            query=query,
-            answer=answer,
-            citations=citations,
-            query_embedding=query_vec,
-            session_id=current_sid,
-            prompt_tokens=t_delta.get("prompt_tokens", 0),
-            completion_tokens=t_delta.get("completion_tokens", 0),
-            model=getattr(llm, "model", "openrouter"),
-            task="answer",
-        )
+        except Exception as exc:
+            tracer.finish()
+            diag = ErrorDiagnosticManager.diagnose(exc, context="Query Processing Pipeline")
+            st.markdown(diag.format_markdown(), unsafe_allow_html=True)
+            _render_execution_trace(tracer)
 
-        # Persist assistant message to SQLite Database
-        db.save_message(
-            session_id=current_sid,
-            role="assistant",
-            content=answer,
-            citations=citations,
-            grounding_score=eval_res["overall_grounding_score"],
-            grounding_passed=eval_res["is_passed"],
-            tokens_used=t_delta["total_tokens"],
-        )
+
+def _render_execution_trace(tracer: ExecutionTracer):
+    """Renders the step-by-step telemetry trace under assistant messages."""
+    summary = tracer.get_summary()
+    with st.expander("Execution Trace & Telemetry", expanded=False):
+        c1, c2, c3, c4 = st.columns(4)
+        c1.metric("Total Latency", f"{summary['total_duration_ms']:,.0f} ms")
+        c2.metric("LLM Calls", summary["llm_calls_count"])
+        c3.metric("LLM Latency", f"{summary['total_llm_time_ms']:,.0f} ms")
+        models_str = ", ".join([m.split("/")[-1].replace(":free", "") for m in summary["models_used"]]) or "local"
+        c4.metric("Active Model", models_str)
+
+        st.markdown("##### Execution Timeline")
+        for idx, span in enumerate(tracer.spans, 1):
+            status_text = "[OK]" if span.status == "success" else ("[WARN]" if span.status == "warning" else "[ERR]")
+            col_s1, col_s2, col_s3 = st.columns([1, 4, 2])
+            col_s1.markdown(f"**#{idx}** `{status_text}`")
+            col_s2.markdown(f"`{span.component}`: **{span.name}**")
+            col_s3.markdown(f"`{span.duration_ms:.1f} ms`")
+
+            with st.expander(f"Details: {span.name}", expanded=False):
+                if span.inputs:
+                    st.markdown("**Inputs:**")
+                    st.json(span.inputs)
+                if span.outputs:
+                    st.markdown("**Outputs:**")
+                    st.json(span.outputs)
+                if span.metadata:
+                    st.markdown("**Metadata:**")
+                    st.json(span.metadata)
+                if span.error:
+                    st.error(f"Error: {span.error}")
 
 
 def _render_message_extras(msg: dict):
@@ -642,11 +719,10 @@ def _render_message_extras(msg: dict):
 
     if msg.get("grounding_score", 0.0) > 0:
         passed = msg.get("grounding_passed", False)
-        badge = '<span class="badge-pass">✓ PASSED</span>' if passed else '<span class="badge-fail">✗ FAILED</span>'
-        token_badge = f'<span class="badge-token">~{msg.get("tokens_used", 0)} Tokens</span>'
-        with st.expander("🧪 Grounding Audit"):
+        badge = '<span class="badge-pass">PASSED</span>' if passed else '<span class="badge-fail">FAILED</span>'
+        with st.expander("Grounding Audit"):
             st.markdown(
-                f"**Score:** {msg['grounding_score']*100:.1f}% | Status: {badge} {token_badge}",
+                f"**Score:** {msg['grounding_score']*100:.1f}% | Status: {badge}",
                 unsafe_allow_html=True,
             )
 
@@ -656,10 +732,9 @@ def _render_message_extras(msg: dict):
 def render_documents_tab():
     vdb = get_pinecone_db()
     emb = get_embedding_manager()
-    tracker: TokenTracker = st.session_state.token_tracker
 
-    st.markdown("### 📤 Upload Documents")
-    st.caption("ℹ️ Document ingestion and vector indexing use local embeddings (`MiniLM-L6-v2`) and cost **0 API tokens**.")
+    st.markdown("### Upload Documents")
+    st.caption("Document ingestion and vector indexing use local embeddings (MiniLM-L6-v2) and cost zero API tokens.")
     uploaded = st.file_uploader(
         "Drag & drop files here",
         type=["pdf", "csv", "xlsx", "docx", "txt"],
@@ -667,28 +742,35 @@ def render_documents_tab():
         label_visibility="collapsed",
     )
 
-    if uploaded and st.button("🚀 Index Uploaded Files", type="primary"):
+    if uploaded and st.button("Index Uploaded Files", type="primary"):
         progress = st.progress(0, text="Starting indexing...")
         total_chunks = 0
+        has_error = False
         for i, f in enumerate(uploaded):
             save_path = UPLOADS_DIR / f.name
-            with open(save_path, "wb") as w:
-                w.write(f.getbuffer())
-            progress.progress((i + 0.5) / len(uploaded), text=f"Parsing {f.name}...")
             try:
-                n = index_file(save_path, vdb, emb, tracker)
+                with open(save_path, "wb") as w:
+                    w.write(f.getbuffer())
+                progress.progress((i + 0.5) / len(uploaded), text=f"Parsing {f.name}...")
+                n = index_file(save_path, vdb, emb)
                 total_chunks += n
-                progress.progress((i + 1) / len(uploaded), text=f"Indexed {f.name} → {n} chunks")
+                progress.progress((i + 1) / len(uploaded), text=f"Indexed {f.name} -> {n} chunks")
             except Exception as exc:
-                st.error(f"Failed to index {f.name}: {exc}")
+                has_error = True
+                diag = ErrorDiagnosticManager.diagnose(exc, context=f"Uploading and Indexing Document `{f.name}`")
+                st.markdown(diag.format_markdown(), unsafe_allow_html=True)
+
         progress.empty()
-        st.success(f"✓ Indexed {len(uploaded)} file(s) → {total_chunks} total chunks saved to persistent DB at $0.00 cost.")
-        st.rerun()
+        if not has_error:
+            st.success(f"Indexed {len(uploaded)} file(s) -> {total_chunks} total chunks saved to persistent database.")
+            st.rerun()
+        else:
+            st.warning(f"Indexing completed with issues. Total indexed chunks: {total_chunks}")
 
     st.divider()
 
     # Document registry
-    st.markdown("### 📋 Persistent Document Registry")
+    st.markdown("### Document Registry")
     registry = vdb.list_documents()
 
     if not registry:
@@ -705,11 +787,11 @@ def render_documents_tab():
 
     for filename, info in registry.items():
         col_name, col_chunks, col_date, col_del = st.columns([4, 1.5, 2.5, 1])
-        col_name.markdown(f"📄 `{filename}`")
+        col_name.markdown(f"`{filename}`")
         col_chunks.markdown(f"**{info['chunk_count']}** chunks")
         indexed_at = info.get("indexed_at", "—")[:10]
         col_date.caption(f"Indexed: {indexed_at}")
-        if col_del.button("🗑️", key=f"del_{filename}", help=f"Delete {filename}"):
+        if col_del.button("Delete", key=f"del_{filename}", help=f"Delete {filename}", type="secondary"):
             deleted = vdb.delete_by_filename(filename)
             st.success(f"Deleted {deleted} chunks for `{filename}`.")
             st.rerun()
@@ -722,21 +804,20 @@ def render_settings_tab():
     llm = get_openrouter_llm()
     hub: CognitiveMemoryHub = st.session_state.cognitive_hub
     cache: SemanticAnswerCache = st.session_state.cache
-    tracker: TokenTracker = st.session_state.token_tracker
 
     col_left, col_right = st.columns(2)
 
     with col_left:
-        st.markdown("### 🧠 Cognitive Memory Explorer")
+        st.markdown("### Cognitive Memory Explorer")
         
         # User Preferences Editor
-        with st.expander("⚙️ User Preferences (Semantic Memory)", expanded=True):
+        with st.expander("User Preferences (Semantic Memory)", expanded=True):
             prefs = hub.semantic_memory.get_all_preferences()
             for k, v in prefs.items():
                 col_k, col_v, col_d = st.columns([2.5, 4, 1])
                 col_k.markdown(f"**{k}**")
                 col_v.caption(v)
-                if col_d.button("✕", key=f"del_pref_{k}"):
+                if col_d.button("X", key=f"del_pref_{k}"):
                     hub.semantic_memory.delete_preference(k)
                     st.rerun()
 
@@ -750,13 +831,13 @@ def render_settings_tab():
                 st.rerun()
 
         # Domain Facts Graph
-        with st.expander("📚 Domain Facts Graph (Semantic Memory)", expanded=False):
+        with st.expander("Domain Facts Graph (Semantic Memory)", expanded=False):
             facts = hub.semantic_memory.get_all_facts(limit=20)
             if facts:
                 for f in facts:
                     col_f, col_fd = st.columns([6, 1])
-                    col_f.markdown(f"• **{f['subject']}** — *{f['predicate']}*: `{f['object']}`")
-                    if col_fd.button("✕", key=f"del_fact_{f['id']}"):
+                    col_f.markdown(f"- **{f['subject']}** — *{f['predicate']}*: `{f['object']}`")
+                    if col_fd.button("X", key=f"del_fact_{f['id']}"):
                         hub.semantic_memory.delete_fact(f["id"])
                         st.rerun()
             else:
@@ -773,7 +854,7 @@ def render_settings_tab():
                 st.rerun()
 
         # Procedural Task Recipes Catalog
-        with st.expander("🛠️ Task Execution Recipes (Procedural Memory)", expanded=False):
+        with st.expander("Task Execution Recipes (Procedural Memory)", expanded=False):
             recipes = hub.procedural_memory.get_all_recipes()
             for r in recipes:
                 st.markdown(f"**Recipe:** `{r['name']}`")
@@ -783,7 +864,7 @@ def render_settings_tab():
                 st.divider()
 
         # Episodic History
-        with st.expander("🕒 Episodic Memory History", expanded=False):
+        with st.expander("Episodic Memory History", expanded=False):
             episodes = hub.episodic_memory.get_recent_episodes(limit=10)
             if episodes:
                 for ep in episodes:
@@ -796,7 +877,7 @@ def render_settings_tab():
 
         st.divider()
 
-        st.markdown("### 🎛️ Retrieval Parameters")
+        st.markdown("### Retrieval Parameters")
         st.session_state.retrieval_top_k = st.slider(
             "Initial retrieval top-K", 5, 30, st.session_state.retrieval_top_k
         )
@@ -805,56 +886,43 @@ def render_settings_tab():
         )
 
     with col_right:
-        st.markdown("### 🔀 OpenRouter Model Status")
+        st.markdown("### OpenRouter Model Status")
         active_models = llm.get_active_models()
         for task, model in active_models.items():
             if model:
                 st.markdown(
-                    f'<span class="model-live">●</span> **{task}** → `{model}`',
+                    f'<span class="model-live">●</span> **{task}** -> `{model}`',
                     unsafe_allow_html=True,
                 )
             else:
                 st.markdown(
-                    f'<span class="model-down">●</span> **{task}** → no live model',
+                    f'<span class="model-down">●</span> **{task}** -> offline',
                     unsafe_allow_html=True,
                 )
         if not llm.is_available():
-            st.warning("⚠️ OpenRouter is unavailable. All requests will use Gemini as fallback.")
+            st.warning("OpenRouter is unavailable. All requests will use Gemini as fallback.")
         else:
-            st.success(f"✓ OpenRouter connected — {len(llm._live_free_models)} free models live.")
+            st.success(f"OpenRouter connected — {len(llm._live_free_models)} free models available.")
 
         st.divider()
 
-        st.markdown("### 📊 Token Budget & Quota Stats")
-        t_stats = tracker.get_summary()
-        col_1, col_2, col_3 = st.columns(3)
-        col_1.metric("Input Tokens", f"{t_stats['total_input_tokens']:,}")
-        col_2.metric("Output Tokens", f"{t_stats['total_output_tokens']:,}")
-        col_3.metric("Total Tokens", f"{t_stats['total_tokens']:,}")
-
-        st.markdown(f"**Gemini Pro Daily Usage:** `{t_stats['total_requests']}` / {GEMINI_PRO_DAILY_REQUEST_CAP} requests ({t_stats['pro_quota_used_pct']}%)")
-        st.markdown(f"**Gemini Flash Daily Usage:** `{t_stats['total_requests']}` / {GEMINI_FLASH_DAILY_REQUEST_CAP} requests ({t_stats['flash_quota_used_pct']}%)")
-        st.markdown(f"**Tokens Saved Locally:** `{t_stats['saved_local_embed_tokens'] + t_stats['saved_cache_tokens']:,}` tokens")
-
-        st.divider()
-
-        st.markdown("### 🗄️ Database & Memory Controls")
+        st.markdown("### Database & Memory Controls")
         col_c1, col_c2 = st.columns(2)
-        if col_c1.button("🧹 Clear Answer Cache", use_container_width=True):
+        if col_c1.button("Clear Answer Cache", use_container_width=True):
             cache.clear()
             st.success("Answer cache cleared.")
             st.rerun()
 
-        if col_c2.button("🧠 Reset Cognitive Memory", use_container_width=True):
+        if col_c2.button("Reset Cognitive Memory", use_container_width=True):
             hub.clear_all()
             st.success("Cognitive memory reset.")
             st.rerun()
 
-        st.caption(f"💾 **SQLite Database Path:** `{DB_PATH}`")
+        st.caption(f"SQLite Database Path: `{DB_PATH}`")
 
         st.divider()
 
-        st.markdown("### 🔑 API Keys (masked)")
+        st.markdown("### API Keys (Masked)")
         from config import PINECONE_API_KEY, OPENROUTER_API_KEY, GEMINI_API_KEY
         def mask(k): return k[:8] + "..." + k[-4:] if len(k) > 12 else "not set"
         st.code(f"PINECONE_API_KEY   = {mask(PINECONE_API_KEY)}")
@@ -869,12 +937,12 @@ def main():
     render_sidebar()
 
     st.markdown(
-        "<h1 style='margin-bottom:4px'>🤖 RAG Assistant</h1>"
-        "<p style='color:#8b949e;margin-top:0'>Persistent Document Intelligence — Powered by Pinecone + OpenRouter + SQLite</p>",
+        "<h1 style='margin-bottom:4px;font-size:1.8rem;'>RAG Assistant</h1>"
+        "<p style='color:#8b949e;margin-top:0;font-size:0.92rem;'>Persistent Document Intelligence — Powered by Pinecone + OpenRouter + SQLite</p>",
         unsafe_allow_html=True,
     )
 
-    tab_chat, tab_docs, tab_settings = st.tabs(["💬 Chat", "📁 Documents", "⚙️ Settings"])
+    tab_chat, tab_docs, tab_settings = st.tabs(["Chat", "Documents", "Settings"])
 
     with tab_chat:
         render_chat_tab()

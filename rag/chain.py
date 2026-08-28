@@ -12,6 +12,7 @@ Two execution modes:
 """
 
 import re
+import time
 from typing import Any, Dict, Generator, List, Optional, Tuple, Union
 
 from config import INITIAL_TOP_K, RERANKED_TOP_K
@@ -28,6 +29,11 @@ try:
     from vectorstore.vector_db import VectorDatabase
 except ImportError:
     VectorDatabase = None
+
+try:
+    from rag.tracer import ExecutionTracer
+except ImportError:
+    ExecutionTracer = None
 
 
 class RAGChain:
@@ -72,29 +78,25 @@ Rules:
         rerank_top_k: int = RERANKED_TOP_K,
         filter_filenames: Optional[List[str]] = None,
         memory_context: Optional[str] = None,
+        tracer: Optional[Any] = None,
     ) -> Dict[str, Any]:
         """
         Executes the full RAG pipeline for a user query.
-
-        Args:
-            query: User's question.
-            initial_top_k: Number of candidates to retrieve before reranking.
-            rerank_top_k: Number of chunks to keep after BM25+RRF reranking.
-            filter_filenames: If set, restricts retrieval to these documents only.
-            memory_context: Conversation history string to prepend to the prompt.
-
-        Returns:
-            Dict with: query, answer, retrieved_chunks, reranked_chunks,
-                       citations, formatted_context.
         """
         if not query or not query.strip():
             return self._empty_response(query, "Please provide a valid question.")
 
         # Step 1: Embed query
+        embed_span = tracer.start_span("embed_query", component="embedding", inputs={"query": query}) if tracer else None
         query_vec = self.embedding_manager.embed_query(query)
+        if tracer and embed_span:
+            tracer.finish_span(embed_span, outputs={"vector_dim": len(query_vec)})
 
         # Step 2: Retrieve from vector DB (Pinecone or FAISS)
+        retrieval_span = tracer.start_span("vector_retrieval", component="retrieval", inputs={"top_k": initial_top_k, "filters": filter_filenames}) if tracer else None
         dense_results = self._retrieve(query_vec, initial_top_k, filter_filenames)
+        if tracer and retrieval_span:
+            tracer.finish_span(retrieval_span, outputs={"candidate_chunks_found": len(dense_results)})
 
         if not dense_results:
             return self._empty_response(
@@ -103,6 +105,7 @@ Rules:
             )
 
         # Step 3: Hybrid BM25+RRF reranking
+        rerank_span = tracer.start_span("hybrid_reranking", component="reranker", inputs={"initial_count": len(dense_results), "rerank_top_k": rerank_top_k}) if tracer else None
         reranked_results = self.reranker.rerank(
             query=query,
             dense_results=dense_results,
@@ -110,12 +113,17 @@ Rules:
             all_chunks=self.vector_db.chunks_metadata,
         )
         top_chunks = [chunk for chunk, score in reranked_results]
+        if tracer and rerank_span:
+            tracer.finish_span(rerank_span, outputs={"top_chunks_selected": len(top_chunks)})
 
         # Step 4: Build grounded prompt
         user_prompt, formatted_context = self._build_prompt(query, top_chunks, memory_context)
 
         # Step 5: Generate answer
+        llm_span = tracer.start_span("llm_generation", component="llm", inputs={"task": "answer", "chunks_count": len(top_chunks)}) if tracer else None
         answer = self._generate(user_prompt)
+        if tracer and llm_span:
+            tracer.finish_span(llm_span, outputs={"answer_length": len(answer)}, metadata={"model": getattr(self.llm, "last_model_used", "openrouter")})
 
         citations = self._extract_citations(top_chunks)
 
@@ -137,37 +145,36 @@ Rules:
         rerank_top_k: int = RERANKED_TOP_K,
         filter_filenames: Optional[List[str]] = None,
         memory_context: Optional[str] = None,
+        tracer: Optional[Any] = None,
     ) -> Generator[Tuple[str, Any], None, None]:
         """
         Streaming version of run(). Yields (event_type, data) tuples:
-
-            ("context", reranked_chunks)   — emitted once before LLM starts
-            ("token",   text_chunk)        — one per token from LLM stream
-            ("done",    metadata_dict)     — final event with citations etc.
-
-        Usage in Streamlit:
-            for event_type, data in rag_chain.run_stream(query):
-                if event_type == "context":
-                    show_context(data)
-                elif event_type == "token":
-                    answer_placeholder.markdown(accumulated + data)
-                elif event_type == "done":
-                    store_message(data)
+            ("context", reranked_chunks)
+            ("token",   text_chunk)
+            ("done",    metadata_dict)
         """
         if not query or not query.strip():
             yield ("token", "Please provide a valid question.")
             yield ("done", {"query": query, "citations": [], "reranked_chunks": []})
             return
 
-        # Retrieval phase (same as non-streaming)
+        # Retrieval phase
+        embed_span = tracer.start_span("embed_query", component="embedding", inputs={"query": query}) if tracer else None
         query_vec = self.embedding_manager.embed_query(query)
+        if tracer and embed_span:
+            tracer.finish_span(embed_span, outputs={"vector_dim": len(query_vec)})
+
+        retrieval_span = tracer.start_span("vector_retrieval", component="retrieval", inputs={"top_k": initial_top_k, "filters": filter_filenames}) if tracer else None
         dense_results = self._retrieve(query_vec, initial_top_k, filter_filenames)
+        if tracer and retrieval_span:
+            tracer.finish_span(retrieval_span, outputs={"candidate_chunks_found": len(dense_results)})
 
         if not dense_results:
             yield ("token", "No indexed document chunks found. Please upload and index documents first.")
             yield ("done", {"query": query, "citations": [], "reranked_chunks": []})
             return
 
+        rerank_span = tracer.start_span("hybrid_reranking", component="reranker", inputs={"initial_count": len(dense_results), "rerank_top_k": rerank_top_k}) if tracer else None
         reranked_results = self.reranker.rerank(
             query=query,
             dense_results=dense_results,
@@ -175,6 +182,8 @@ Rules:
             all_chunks=self.vector_db.chunks_metadata,
         )
         top_chunks = [chunk for chunk, score in reranked_results]
+        if tracer and rerank_span:
+            tracer.finish_span(rerank_span, outputs={"top_chunks_selected": len(top_chunks)})
 
         # Emit context immediately so UI can show retrieved chunks while LLM generates
         yield ("context", top_chunks)
@@ -183,6 +192,9 @@ Rules:
         citations = self._extract_citations(top_chunks)
 
         # Stream tokens from LLM
+        llm_span = tracer.start_span("llm_stream", component="llm", inputs={"task": "answer", "chunks_count": len(top_chunks)}) if tracer else None
+        
+        token_count = 0
         if hasattr(self.llm, "generate_stream"):
             for token in self.llm.generate_stream(
                 prompt=user_prompt,
@@ -190,15 +202,19 @@ Rules:
                 system_instruction=self.SYSTEM_PROMPT,
                 temperature=0.1,
             ):
+                token_count += 1
                 yield ("token", token)
         else:
-            # Fallback: non-streaming generate (GeminiLLM without streaming_generate)
             answer = self.llm.generate(
                 prompt=user_prompt,
                 system_instruction=self.SYSTEM_PROMPT,
                 temperature=0.1,
             )
+            token_count += len(answer.split())
             yield ("token", answer)
+
+        if tracer and llm_span:
+            tracer.finish_span(llm_span, outputs={"tokens_streamed": token_count}, metadata={"model": getattr(self.llm, "last_model_used", "openrouter")})
 
         yield (
             "done",
@@ -222,7 +238,6 @@ Rules:
         """Routes retrieval to Pinecone or FAISS depending on the vector_db type."""
         search_kwargs: dict = {"top_k": top_k}
 
-        # PineconeDB supports filter_filenames; VectorDatabase does not
         if filter_filenames and hasattr(self.vector_db, "search"):
             import inspect
             sig = inspect.signature(self.vector_db.search)
@@ -248,48 +263,39 @@ Rules:
 
         memory_section = ""
         if memory_context and memory_context.strip():
-            memory_section = f"\nCOGNITIVE MEMORY & CONTEXT:\n{memory_context}\n"
+            memory_section = f"CONVERSATION HISTORY & USER PREFERENCES:\n{memory_context.strip()}\n\n"
 
-        user_prompt = f"""CONTEXT CHUNKS:
-{formatted_context}
-{memory_section}
-USER QUESTION:
-{query}
+        prompt = (
+            f"{memory_section}"
+            f"DOCUMENT CONTEXT:\n{formatted_context}\n\n"
+            f"QUESTION:\n{query}\n\n"
+            f"ANSWER (strictly grounded in the document context above, quoting exact figures and citing sources):"
+        )
+        return prompt, formatted_context
 
-GROUNDED ANSWER WITH INLINE CITATIONS:"""
-
-        return user_prompt, formatted_context
-
-    def _generate(self, user_prompt: str) -> str:
-        """Calls the LLM (OpenRouter or Gemini) for a non-streaming response."""
-        if not self.llm.is_available():
-            return "[LLM Offline Mode — check OPENROUTER_API_KEY and GEMINI_API_KEY]"
-
-        # OpenRouterLLM uses task="answer"; GeminiLLM uses system_instruction param
-        if hasattr(self.llm, "generate") and "task" in str(type(self.llm)):
+    def _generate(self, prompt: str) -> str:
+        """Calls the LLM (OpenRouter or Gemini) with the grounded prompt."""
+        if hasattr(self.llm, "generate"):
             return self.llm.generate(
-                prompt=user_prompt,
+                prompt=prompt,
                 task="answer",
                 system_instruction=self.SYSTEM_PROMPT,
                 temperature=0.1,
             )
-        else:
-            return self.llm.generate(
-                prompt=user_prompt,
-                system_instruction=self.SYSTEM_PROMPT,
-                temperature=0.1,
-            )
+        return "Error: No valid LLM backend configured."
 
-    def _extract_citations(self, top_chunks: List[Dict]) -> List[str]:
+    def _extract_citations(self, chunks: List[Dict]) -> List[str]:
+        """Extracts unique [Source: <filename>, Page <page>] citation tags."""
+        seen = set()
         citations = []
-        for chunk in top_chunks:
-            tag = f"{chunk['filename']} (Page {chunk['page_number']})"
-            if tag not in citations:
+        for chunk in chunks:
+            tag = f"{chunk['filename']} (p. {chunk['page_number']})"
+            if tag not in seen:
+                seen.add(tag)
                 citations.append(tag)
         return citations
 
-    @staticmethod
-    def _empty_response(query: str, message: str) -> Dict[str, Any]:
+    def _empty_response(self, query: str, message: str) -> Dict[str, Any]:
         return {
             "query": query,
             "answer": message,

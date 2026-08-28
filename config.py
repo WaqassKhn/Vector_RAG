@@ -42,39 +42,41 @@ OPENROUTER_SITE_URL = "https://github.com/WaqassKhn/Vector_RAG"
 OPENROUTER_APP_NAME = "RAG-NTPC"
 
 # Task → model priority lists (index 0 = highest priority).
-# The OpenRouterLLM class verifies these against the live free model list at startup
-# and skips any that are currently unavailable. Update this list as OpenRouter's
-# free model catalog changes (check https://openrouter.ai/models?q=:free).
+# Live free models catalog as of August 2026:
+# - 'openrouter/free' (automatic multi-provider free router)
+# - 'minimax/minimax-m3:free' & 'minimax/minimax-m2.7:free'
+# - 'inclusionai/ling-3.0-flash-fin:free'
+# - 'google/gemma-4-31b-it:free' & 'google/gemma-4-26b-a4b-it:free'
 OPENROUTER_MODELS: dict[str, list[str]] = {
-    "answer": [                              # Main answer generation — needs a capable model
-        "google/gemma-3-27b-it:free",
-        "meta-llama/llama-3.3-70b-instruct:free",
-        "mistralai/mistral-7b-instruct:free",
-        "qwen/qwen3-8b:free",
+    "answer": [                              # Main answer generation
+        "openrouter/free",
+        "minimax/minimax-m3:free",
+        "minimax/minimax-m2.7:free",
+        "inclusionai/ling-3.0-flash-fin:free",
+        "google/gemma-4-31b-it:free",
+        "google/gemma-4-26b-a4b-it:free",
     ],
     "decompose": [                           # Query planning — speed > raw quality
-        "meta-llama/llama-3.1-8b-instruct:free",
-        "microsoft/phi-3-mini-128k-instruct:free",
-        "qwen/qwen3-8b:free",
-        "mistralai/mistral-7b-instruct:free",
+        "openrouter/free",
+        "minimax/minimax-m2.7:free",
+        "inclusionai/ling-3.0-flash-fin:free",
+        "minimax/minimax-m3:free",
     ],
     "judge": [                               # LLM-as-judge grounding evaluation
-        "meta-llama/llama-3.3-70b-instruct:free",
-        "google/gemma-3-27b-it:free",
-        "mistralai/mistral-7b-instruct:free",
-        "qwen/qwen3-8b:free",
+        "openrouter/free",
+        "minimax/minimax-m3:free",
+        "minimax/minimax-m2.7:free",
+        "google/gemma-4-31b-it:free",
     ],
     "compress": [                            # Memory summarisation — small + fast
-        "meta-llama/llama-3.1-8b-instruct:free",
-        "qwen/qwen3-8b:free",
-        "microsoft/phi-3-mini-128k-instruct:free",
-        "mistralai/mistral-7b-instruct:free",
+        "openrouter/free",
+        "minimax/minimax-m2.7:free",
+        "inclusionai/ling-3.0-flash-fin:free",
     ],
     "triage": [                              # Document scope selection
-        "meta-llama/llama-3.1-8b-instruct:free",
-        "mistralai/mistral-7b-instruct:free",
-        "qwen/qwen3-8b:free",
-        "microsoft/phi-3-mini-128k-instruct:free",
+        "openrouter/free",
+        "minimax/minimax-m2.7:free",
+        "inclusionai/ling-3.0-flash-fin:free",
     ],
 }
 

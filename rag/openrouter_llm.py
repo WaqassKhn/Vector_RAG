@@ -56,6 +56,8 @@ class OpenRouterLLM:
         self.api_key = api_key or OPENROUTER_API_KEY
         self._gemini_fallback = gemini_fallback  # set lazily on first need
 
+        self.last_model_used = "openrouter"
+
         # Fetch live free models once at startup; cached for the lifetime of this object.
         self._live_free_models: set[str] = self._fetch_live_free_models()
 
@@ -100,8 +102,12 @@ class OpenRouterLLM:
                 mid = m.get("id", "")
                 pricing = m.get("pricing", {})
                 prompt_price = str(pricing.get("prompt", "1"))
-                if mid.endswith(":free") and prompt_price == "0":
+                if (mid.endswith(":free") or mid == "openrouter/free") and prompt_price == "0":
                     free_ids.add(mid)
+
+            # Always ensure the openrouter/free router is available if API key is active
+            if self.api_key:
+                free_ids.add("openrouter/free")
 
             return free_ids
 
@@ -227,6 +233,7 @@ class OpenRouterLLM:
             try:
                 logger.debug(f"[OpenRouterLLM] task={task} → trying model: {model_id}")
                 result = self._call_model(model_id, messages, temperature, stream=False)
+                self.last_model_used = model_id
                 logger.info(f"[OpenRouterLLM] task={task} → success with: {model_id}")
                 return result
 
@@ -298,6 +305,7 @@ class OpenRouterLLM:
                             continue
 
                         resp.raise_for_status()
+                        self.last_model_used = model_id
                         logger.info(f"[OpenRouterLLM] streaming from: {model_id}")
 
                         # Parse SSE lines
