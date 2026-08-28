@@ -109,12 +109,12 @@ st.markdown("""
     border-radius: 6px;
 }
 
-/* 1. New Chat Button - Green with SVG Icon */
+/* 1. New Chat Button - Green with Inverted SVG Icon */
 div.st-key-new_chat_btn > button,
 [data-testid="stSidebar"] div.st-key-new_chat_btn > button {
     background-color: #238636 !important;
     color: #ffffff !important;
-    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
     font-weight: 600 !important;
     display: flex !important;
     align-items: center !important;
@@ -129,7 +129,7 @@ div.st-key-new_chat_btn > button::before,
     display: inline-block;
     width: 17px;
     height: 17px;
-    background-image: url('data:image/svg+xml;utf8,<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 13.5V7.5M9 10.5H15M7 18V20.3355C7 20.8684 7 21.1348 7.10923 21.2716C7.20422 21.3906 7.34827 21.4599 7.50054 21.4597C7.67563 21.4595 7.88367 21.2931 8.29976 20.9602L10.6852 19.0518C11.1725 18.662 11.4162 18.4671 11.6875 18.3285C11.9282 18.2055 12.1844 18.1156 12.4492 18.0613C12.7477 18 13.0597 18 13.6837 18H16.2C17.8802 18 18.7202 18 19.362 17.673C19.9265 17.3854 20.3854 16.9265 20.673 16.362C21 15.7202 21 14.8802 21 13.2V7.8C21 6.11984 21 5.27976 20.673 4.63803C20.3854 4.07354 19.9265 3.6146 19.362 3.32698C18.7202 3 17.8802 3 16.2 3H7.8C6.11984 3 5.27976 3 4.63803 3.32698C4.07354 3.6146 3.6146 4.07354 3.32698 4.63803C3 5.27976 3 6.11984 3 7.8V14C3 14.93 3 15.395 3.10222 15.7765C3.37962 16.8117 4.18827 17.6204 5.22354 17.8978C5.60504 18 6.07003 18 7 18Z" stroke="%23ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>');
+    background-image: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KIDxwYXRoIGQ9Ik0xMiAxMy41VjcuNU05IDEwLjVIMTVNNyAxOFYyMC4zMzU1QzcgMjAuODY4NCA3IDIxLjEzNDggNy4xMDkyMyAyMS4yNzE2QzcuMjA0MjIgMjEuMzkwNiA3LjM0ODI3IDIxLjQ1OTkgNy41MDA1NCAyMS40NTk3QzcuNjc1NjMgMjEuNDU5NSA3Ljg4MzY3IDIxLjI5MzEgOC4yOTk3NiAyMC45NjAyTDEwLjY4NTIgMTkuMDUxOEMxMS4xNzI1IDE4LjY2MiAxMS40MTYyIDE4LjQ2NzEgMTEuNjg3NSAxOC4zMjg1QzExLjkyODIgMTguMjA1NSAxMi4xODQ0IDE4LjExNTYgMTIuNDQ5MiAxOC4wNjEzQzEyLjc0NzcgMTggMTMuMDU5NyAxOCAxMy42ODM3IDE4SDE2LjJDMTcuODgwMiAxOCAxOC43MjAyIDE4IDE5LjM2MiAxNy42NzNDMTkuOTI2NSAxNy4zODU0IDIwLjM4NTQgMTYuOTI2NSAyMC42NzMgMTYuMzYyQzIxIDE1LjcyMDIgMjEgMTQuODgwMiAyMSAxMy4yVjcuOEMyMSA2LjExOTg0IDIxIDUuMjc5NzYgMjAuNjczIDQuNjM4MDNDMjAuMzg1NCA0LjA3MzU0IDE5LjkyNjUgMy42MTQ2IDE5LjM2MiAzLjMyNjk4QzE4LjcyMDIgMyAxNy44ODAyIDMgMTYuMiAzSDcuOEM2LjExOTg0IDMgNS4yNzk3NiAzIDQuNjM4MDMgMy4zMjY5OEM0LjA3MzU0IDMuNjE0NiAzLjYxNDYgNC4wNzM1NCAzLjMyNjk4IDQuNjM4MDNDMyA1LjI3OTc2IDMgNi4xMTk4NCAzIDcuOFYxNEMzIDE0LjkzIDMgMTUuMzk1IDMuMTAyMjIgMTUuNzc2NUMzLjM3OTYyIDE2LjgxMTcgNC4xODgyNyAxNy42MjA0IDUuMjIzNTQgMTcuODk3OEM1LjYwNTA0IDE4IDYuMDcwMDMgMTggNyAxOFoiIHN0cm9rZT0iI2ZmZmZmZiIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KPC9zdmc+Cg==');
     background-repeat: no-repeat;
     background-position: center;
     background-size: contain;
@@ -171,46 +171,53 @@ div.st-key-new_chat_btn > button:hover,
     border-color: rgba(255, 255, 255, 0.12) !important;
 }
 
-/* 4. Delete Chat Icon Button (Trash Bin SVG) */
+/* 4. Delete Chat Icon Button (Inverted White Trash Bin SVG) */
 div[class*="st-key-del_sess_"] > button,
 div[class*="st-key-del_doc_"] > button {
-    background-color: transparent !important;
-    background-image: url('data:image/svg+xml;utf8,<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16 6V5.2C16 4.0799 16 3.51984 15.782 3.09202C15.5903 2.71569 15.2843 2.40973 14.908 2.21799C14.4802 2 13.9201 2 12.8 2H11.2C10.0799 2 9.51984 2 9.09202 2.21799C8.71569 2.40973 8.40973 2.71569 8.21799 3.09202C8 3.51984 8 4.0799 8 5.2V6M3 6H21M19 6V17.2C19 18.8802 19 19.7202 18.673 20.362C18.3854 20.9265 17.9265 21.3854 17.362 21.673C16.7202 22 15.8802 22 14.2 22H9.8C8.11984 22 7.27976 22 6.63803 21.673C6.07354 21.3854 5.6146 20.9265 5.32698 20.362C5 19.7202 5 18.8802 5 17.2V6" stroke="%238b949e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>') !important;
+    background-color: rgba(255, 255, 255, 0.04) !important;
+    background-image: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KIDxwYXRoIGQ9Ik0xNiA2VjUuMkMxNiA0LjA3OTkgMTYgMy41MTk4NCAxNS43ODIgMy4wOTIwMkMxNS41OTAzIDIuNzE1NjkgMTUuMjg0MyAyLjQwOTczIDE0LjkwOCAyLjIxNzk5QzE0LjQ4MDIgMiAxMy45MjAxIDIgMTIuOCAySDExLjJDMTAuMDc5OSAyIDkuNTE5ODQgMiA5LjA5MjAyIDIuMjE3OTlDOC43MTU2OSAyLjQwOTczIDguNDA5NzMgMi43MTU2OSA4LjIxNzk5IDMuMDkyMDJDOCAzLjUxOTg0IDggNC4wNzk5IDggNS4yVjZNMyA2SDIxTTE5IDZWMTcuMkMxOSAxOC44ODAyIDE5IDE5LjcyMDIgMTguNjczIDIwLjM2MkMxOC4zODU0IDIwLjkyNjUgMTcuOTI2NSAyMS4zODU0IDE3LjM2MiAyMS42NzNDMTYuNzIwMiAyMiAxNS44ODAyIDIyIDE0LjIgMjJIOS44QzguMTE5ODQgMjIgNy4yNzk3NiAyMiA2LjYzODAzIDIxLjY3M0M2LjA3MzU0IDIxLjM4NTQgNS42MTQ2IDIwLjkyNjUgNS4zMjY5OCAyMC4zNjJDNSAxOS43MjAyIDUgMTguODgwMiA1IDE3LjJWNiIgc3Ryb2tlPSIjZmZmZmZmIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8L3N2Zz4K') !important;
     background-repeat: no-repeat !important;
     background-position: center !important;
-    background-size: 15px 15px !important;
-    border: 1px solid transparent !important;
+    background-size: 16px 16px !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 6px !important;
     min-height: 36px !important;
-    min-width: 32px !important;
+    min-width: 34px !important;
     padding: 0 !important;
 }
 
 div[class*="st-key-del_sess_"] > button:hover,
 div[class*="st-key-del_doc_"] > button:hover {
-    background-color: rgba(248, 81, 73, 0.15) !important;
-    background-image: url('data:image/svg+xml;utf8,<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16 6V5.2C16 4.0799 16 3.51984 15.782 3.09202C15.5903 2.71569 15.2843 2.40973 14.908 2.21799C14.4802 2 13.9201 2 12.8 2H11.2C10.0799 2 9.51984 2 9.09202 2.21799C8.71569 2.40973 8.40973 2.71569 8.21799 3.09202C8 3.51984 8 4.0799 8 5.2V6M3 6H21M19 6V17.2C19 18.8802 19 19.7202 18.673 20.362C18.3854 20.9265 17.9265 21.3854 17.362 21.673C16.7202 22 15.8802 22 14.2 22H9.8C8.11984 22 7.27976 22 6.63803 21.673C6.07354 21.3854 5.6146 20.9265 5.32698 20.362C5 19.7202 5 18.8802 5 17.2V6" stroke="%23f85149" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>') !important;
-    border-color: rgba(248, 81, 73, 0.3) !important;
+    background-color: rgba(248, 81, 73, 0.25) !important;
+    border-color: rgba(248, 81, 73, 0.5) !important;
 }
 
-/* 5. Cancel / Erase Icon Button (Circular X SVG) */
+/* 5. Cancel / Erase Icon Button (Inverted White Circular X SVG) */
 div[class*="st-key-del_pref_"] > button,
 div[class*="st-key-del_fact_"] > button {
-    background-color: transparent !important;
-    background-image: url('data:image/svg+xml;utf8,<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M15 9L9 15M9 9L15 15M22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12Z" stroke="%238b949e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>') !important;
+    background-color: rgba(255, 255, 255, 0.04) !important;
+    background-image: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KIDxwYXRoIGQ9Ik0xNSA5TDkgMTVNOSA5TDE1IDE1TTIyIDEyQzIyIDE3LjUyMjggMTcuNTIyOCAyMiAxMiAyMkM2LjQ3NzE1IDIyIDIgMTcuNTIyOCAyIDEyQzIgNi40NzcxNSA2LjQ3NzE1IDIgMTIgMkMxNy41MjI4IDIgMjIgNi40NzcxNSAyMiAxMloiIHN0cm9rZT0iI2ZmZmZmZiIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KPC9zdmc+Cg==') !important;
     background-repeat: no-repeat !important;
     background-position: center !important;
-    background-size: 15px 15px !important;
-    border: 1px solid transparent !important;
+    background-size: 16px 16px !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    border-radius: 6px !important;
     min-height: 32px !important;
-    min-width: 30px !important;
+    min-width: 32px !important;
     padding: 0 !important;
 }
 
 div[class*="st-key-del_pref_"] > button:hover,
 div[class*="st-key-del_fact_"] > button:hover {
-    background-color: rgba(248, 81, 73, 0.15) !important;
-    background-image: url('data:image/svg+xml;utf8,<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M15 9L9 15M9 9L15 15M22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12Z" stroke="%23f85149" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>') !important;
-    border-color: rgba(248, 81, 73, 0.3) !important;
+    background-color: rgba(248, 81, 73, 0.25) !important;
+    border-color: rgba(248, 81, 73, 0.5) !important;
+}
+
+div[class*="st-key-del_sess_"] button p,
+div[class*="st-key-del_doc_"] button p,
+div[class*="st-key-del_pref_"] button p,
+div[class*="st-key-del_fact_"] button p {
+    display: none !important;
 }
 
 /* Secondary general buttons outside sidebar */
