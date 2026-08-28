@@ -192,11 +192,11 @@ div[class*="st-key-del_doc_"] > button:hover {
     border-color: rgba(248, 81, 73, 0.3) !important;
 }
 
-/* 5. Cancel / Erase Icon Button (Square with X SVG) */
+/* 5. Cancel / Erase Icon Button (Circular X SVG) */
 div[class*="st-key-del_pref_"] > button,
 div[class*="st-key-del_fact_"] > button {
     background-color: transparent !important;
-    background-image: url('data:image/svg+xml;utf8,<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 9L15 15M15 9L9 15M7.8 21H16.2C17.8802 21 18.7202 21 19.362 20.673C19.9265 20.3854 20.3854 19.9265 20.673 19.362C21 18.7202 21 17.8802 21 16.2V7.8C21 6.11984 21 5.27976 20.673 4.63803C20.3854 4.07354 19.9265 3.6146 19.362 3.32698C18.7202 3 17.8802 3 16.2 3H7.8C6.11984 3 5.27976 3 4.63803 3.32698C4.07354 3.6146 3.6146 4.07354 3.32698 4.63803C3 5.27976 3 6.11984 3 7.8V16.2C3 17.8802 3 18.7202 3.32698 19.362C3.6146 19.9265 4.07354 20.3854 4.63803 20.673C5.27976 21 6.11984 21 7.8 21Z" stroke="%238b949e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>') !important;
+    background-image: url('data:image/svg+xml;utf8,<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M15 9L9 15M9 9L15 15M22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12Z" stroke="%238b949e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>') !important;
     background-repeat: no-repeat !important;
     background-position: center !important;
     background-size: 15px 15px !important;
@@ -209,7 +209,7 @@ div[class*="st-key-del_fact_"] > button {
 div[class*="st-key-del_pref_"] > button:hover,
 div[class*="st-key-del_fact_"] > button:hover {
     background-color: rgba(248, 81, 73, 0.15) !important;
-    background-image: url('data:image/svg+xml;utf8,<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 9L15 15M15 9L9 15M7.8 21H16.2C17.8802 21 18.7202 21 19.362 20.673C19.9265 20.3854 20.3854 19.9265 20.673 19.362C21 18.7202 21 17.8802 21 16.2V7.8C21 6.11984 21 5.27976 20.673 4.63803C20.3854 4.07354 19.9265 3.6146 19.362 3.32698C18.7202 3 17.8802 3 16.2 3H7.8C6.11984 3 5.27976 3 4.63803 3.32698C4.07354 3.6146 3.6146 4.07354 3.32698 4.63803C3 5.27976 3 6.11984 3 7.8V16.2C3 17.8802 3 18.7202 3.32698 19.362C3.6146 19.9265 4.07354 20.3854 4.63803 20.673C5.27976 21 6.11984 21 7.8 21Z" stroke="%23f85149" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>') !important;
+    background-image: url('data:image/svg+xml;utf8,<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M15 9L9 15M9 9L15 15M22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12Z" stroke="%23f85149" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>') !important;
     border-color: rgba(248, 81, 73, 0.3) !important;
 }
 
