@@ -109,30 +109,16 @@ st.markdown("""
     border-radius: 6px;
 }
 
-/* 1. New Chat Button - Green with Inverted SVG Icon */
+/* 1. New Chat Button - Green */
 div.st-key-new_chat_btn > button,
 [data-testid="stSidebar"] div.st-key-new_chat_btn > button {
     background-color: #238636 !important;
     color: #ffffff !important;
     border: 1px solid rgba(255, 255, 255, 0.2) !important;
     font-weight: 600 !important;
-    display: flex !important;
-    align-items: center !important;
     justify-content: center !important;
     text-align: center !important;
-    gap: 8px !important;
-}
-
-div.st-key-new_chat_btn > button::before,
-[data-testid="stSidebar"] div.st-key-new_chat_btn > button::before {
-    content: '';
-    display: inline-block;
-    width: 17px;
-    height: 17px;
-    background-image: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KIDxwYXRoIGQ9Ik0xMiAxMy41VjcuNU05IDEwLjVIMTVNNyAxOFYyMC4zMzU1QzcgMjAuODY4NCA3IDIxLjEzNDggNy4xMDkyMyAyMS4yNzE2QzcuMjA0MjIgMjEuMzkwNiA3LjM0ODI3IDIxLjQ1OTkgNy41MDA1NCAyMS40NTk3QzcuNjc1NjMgMjEuNDU5NSA3Ljg4MzY3IDIxLjI5MzEgOC4yOTk3NiAyMC45NjAyTDEwLjY4NTIgMTkuMDUxOEMxMS4xNzI1IDE4LjY2MiAxMS40MTYyIDE4LjQ2NzEgMTEuNjg3NSAxOC4zMjg1QzExLjkyODIgMTguMjA1NSAxMi4xODQ0IDE4LjExNTYgMTIuNDQ5MiAxOC4wNjEzQzEyLjc0NzcgMTggMTMuMDU5NyAxOCAxMy42ODM3IDE4SDE2LjJDMTcuODgwMiAxOCAxOC43MjAyIDE4IDE5LjM2MiAxNy42NzNDMTkuOTI2NSAxNy4zODU0IDIwLjM4NTQgMTYuOTI2NSAyMC42NzMgMTYuMzYyQzIxIDE1LjcyMDIgMjEgMTQuODgwMiAyMSAxMy4yVjcuOEMyMSA2LjExOTg0IDIxIDUuMjc5NzYgMjAuNjczIDQuNjM4MDNDMjAuMzg1NCA0LjA3MzU0IDE5LjkyNjUgMy42MTQ2IDE5LjM2MiAzLjMyNjk4QzE4LjcyMDIgMyAxNy44ODAyIDMgMTYuMiAzSDcuOEM2LjExOTg0IDMgNS4yNzk3NiAzIDQuNjM4MDMgMy4zMjY5OEM0LjA3MzU0IDMuNjE0NiAzLjYxNDYgNC4wNzM1NCAzLjMyNjk4IDQuNjM4MDNDMyA1LjI3OTc2IDMgNi4xMTk4NCAzIDcuOFYxNEMzIDE0LjkzIDMgMTUuMzk1IDMuMTAyMjIgMTUuNzc2NUMzLjM3OTYyIDE2LjgxMTcgNC4xODgyNyAxNy42MjA0IDUuMjIzNTQgMTcuODk3OEM1LjYwNTA0IDE4IDYuMDcwMDMgMTggNyAxOFoiIHN0cm9rZT0iI2ZmZmZmZiIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KPC9zdmc+Cg==');
-    background-repeat: no-repeat;
-    background-position: center;
-    background-size: contain;
+    font-size: 0.9rem !important;
 }
 
 div.st-key-new_chat_btn > button:hover,
@@ -171,53 +157,48 @@ div.st-key-new_chat_btn > button:hover,
     border-color: rgba(255, 255, 255, 0.12) !important;
 }
 
-/* 4. Delete Chat Icon Button (Inverted White Trash Bin SVG) */
+/* 4. Delete Chat & Document Icon Button (Trash Bin) */
 div[class*="st-key-del_sess_"] > button,
 div[class*="st-key-del_doc_"] > button {
     background-color: rgba(255, 255, 255, 0.04) !important;
-    background-image: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KIDxwYXRoIGQ9Ik0xNiA2VjUuMkMxNiA0LjA3OTkgMTYgMy41MTk4NCAxNS43ODIgMy4wOTIwMkMxNS41OTAzIDIuNzE1NjkgMTUuMjg0MyAyLjQwOTczIDE0LjkwOCAyLjIxNzk5QzE0LjQ4MDIgMiAxMy45MjAxIDIgMTIuOCAySDExLjJDMTAuMDc5OSAyIDkuNTE5ODQgMiA5LjA5MjAyIDIuMjE3OTlDOC43MTU2OSAyLjQwOTczIDguNDA5NzMgMi43MTU2OSA4LjIxNzk5IDMuMDkyMDJDOCAzLjUxOTg0IDggNC4wNzk5IDggNS4yVjZNMyA2SDIxTTE5IDZWMTcuMkMxOSAxOC44ODAyIDE5IDE5LjcyMDIgMTguNjczIDIwLjM2MkMxOC4zODU0IDIwLjkyNjUgMTcuOTI2NSAyMS4zODU0IDE3LjM2MiAyMS42NzNDMTYuNzIwMiAyMiAxNS44ODAyIDIyIDE0LjIgMjJIOS44QzguMTE5ODQgMjIgNy4yNzk3NiAyMiA2LjYzODAzIDIxLjY3M0M2LjA3MzU0IDIxLjM4NTQgNS42MTQ2IDIwLjkyNjUgNS4zMjY5OCAyMC4zNjJDNSAxOS43MjAyIDUgMTguODgwMiA1IDE3LjJWNiIgc3Ryb2tlPSIjZmZmZmZmIiBzdHJva2Utd2lkdGg9IjIiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCIvPgo8L3N2Zz4K') !important;
-    background-repeat: no-repeat !important;
-    background-position: center !important;
-    background-size: 16px 16px !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: #e6edf3 !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
     border-radius: 6px !important;
     min-height: 36px !important;
     min-width: 34px !important;
     padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
 }
 
 div[class*="st-key-del_sess_"] > button:hover,
 div[class*="st-key-del_doc_"] > button:hover {
-    background-color: rgba(248, 81, 73, 0.25) !important;
-    border-color: rgba(248, 81, 73, 0.5) !important;
+    background-color: rgba(248, 81, 73, 0.2) !important;
+    color: #ff7b72 !important;
+    border-color: rgba(248, 81, 73, 0.4) !important;
 }
 
-/* 5. Cancel / Erase Icon Button (Inverted White Circular X SVG) */
+/* 5. Cancel / Erase Icon Button (Circular X) */
 div[class*="st-key-del_pref_"] > button,
 div[class*="st-key-del_fact_"] > button {
     background-color: rgba(255, 255, 255, 0.04) !important;
-    background-image: url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KIDxwYXRoIGQ9Ik0xNSA5TDkgMTVNOSA5TDE1IDE1TTIyIDEyQzIyIDE3LjUyMjggMTcuNTIyOCAyMiAxMiAyMkM2LjQ3NzE1IDIyIDIgMTcuNTIyOCAyIDEyQzIgNi40NzcxNSA2LjQ3NzE1IDIgMTIgMkMxNy41MjI4IDIgMjIgNi40NzcxNSAyMiAxMloiIHN0cm9rZT0iI2ZmZmZmZiIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KPC9zdmc+Cg==') !important;
-    background-repeat: no-repeat !important;
-    background-position: center !important;
-    background-size: 16px 16px !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+    color: #e6edf3 !important;
+    border: 1px solid rgba(255, 255, 255, 0.08) !important;
     border-radius: 6px !important;
     min-height: 32px !important;
     min-width: 32px !important;
     padding: 0 !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
 }
 
 div[class*="st-key-del_pref_"] > button:hover,
 div[class*="st-key-del_fact_"] > button:hover {
-    background-color: rgba(248, 81, 73, 0.25) !important;
-    border-color: rgba(248, 81, 73, 0.5) !important;
-}
-
-div[class*="st-key-del_sess_"] button p,
-div[class*="st-key-del_doc_"] button p,
-div[class*="st-key-del_pref_"] button p,
-div[class*="st-key-del_fact_"] button p {
-    display: none !important;
+    background-color: rgba(248, 81, 73, 0.2) !important;
+    color: #ff7b72 !important;
+    border-color: rgba(248, 81, 73, 0.4) !important;
 }
 
 /* Secondary general buttons outside sidebar */
@@ -411,8 +392,8 @@ def render_sidebar():
         st.caption("Document Intelligence Engine")
         st.divider()
 
-        # 1. New Chat Button (Green with SVG icon + text)
-        if st.button("New Chat", key="new_chat_btn", use_container_width=True, type="primary"):
+        # 1. New Chat Button (Green with icon + text)
+        if st.button("New Chat", key="new_chat_btn", icon=":material/add_comment:", use_container_width=True, type="primary"):
             new_sid = db.create_session(title="New Conversation")
             st.session_state.active_session_id = new_sid
             st.rerun()
@@ -445,7 +426,7 @@ def render_sidebar():
                             st.rerun()
 
                 with col_del:
-                    if st.button("", key=f"del_sess_{sid}", help=f"Delete '{stitle}'", type="secondary"):
+                    if st.button("", key=f"del_sess_{sid}", icon=":material/delete:", help=f"Delete '{stitle}'", type="secondary"):
                         db.delete_session(sid)
                         remaining = db.list_sessions(limit=1)
                         st.session_state.active_session_id = remaining[0]["id"] if remaining else db.create_session(title="New Conversation")
@@ -859,7 +840,7 @@ def render_documents_tab():
         col_chunks.markdown(f"**{info['chunk_count']}** chunks")
         indexed_at = info.get("indexed_at", "—")[:10]
         col_date.caption(f"Indexed: {indexed_at}")
-        if col_del.button("", key=f"del_doc_{filename}", help=f"Delete {filename}", type="secondary"):
+        if col_del.button("", key=f"del_doc_{filename}", icon=":material/delete:", help=f"Delete {filename}", type="secondary"):
             deleted = vdb.delete_by_filename(filename)
             st.success(f"Deleted {deleted} chunks for `{filename}`.")
             st.rerun()
@@ -912,7 +893,7 @@ def render_settings_tab():
                 col_k, col_v, col_d = st.columns([2.5, 4, 1])
                 col_k.markdown(f"**{k}**")
                 col_v.caption(v)
-                if col_d.button("", key=f"del_pref_{k}", help=f"Erase preference '{k}'", type="secondary"):
+                if col_d.button("", key=f"del_pref_{k}", icon=":material/cancel:", help=f"Erase preference '{k}'", type="secondary"):
                     hub.semantic_memory.delete_preference(k)
                     st.rerun()
 
@@ -932,7 +913,7 @@ def render_settings_tab():
                 for f in facts:
                     col_f, col_fd = st.columns([6, 1])
                     col_f.markdown(f"- **{f['subject']}** — *{f['predicate']}*: `{f['object']}`")
-                    if col_fd.button("", key=f"del_fact_{f['id']}", help="Erase domain fact", type="secondary"):
+                    if col_fd.button("", key=f"del_fact_{f['id']}", icon=":material/cancel:", help="Erase domain fact", type="secondary"):
                         hub.semantic_memory.delete_fact(f["id"])
                         st.rerun()
             else:
@@ -1018,8 +999,7 @@ def render_settings_tab():
 
         st.divider()
 
-        KEY_ICON_SVG = '<svg style="display:inline-block;vertical-align:middle;width:20px;height:20px;margin-left:6px;" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M15 9H15.01M15 15C18.3137 15 21 12.3137 21 9C21 5.68629 18.3137 3 15 3C11.6863 3 9 5.68629 9 9C9 9.27368 9.01832 9.54308 9.05381 9.80704C9.11218 10.2412 9.14136 10.4583 9.12172 10.5956C9.10125 10.7387 9.0752 10.8157 9.00469 10.9419C8.937 11.063 8.81771 11.1823 8.57913 11.4209L3.46863 16.5314C3.29568 16.7043 3.2092 16.7908 3.14736 16.8917C3.09253 16.9812 3.05213 17.0787 3.02763 17.1808C3 17.2959 3 17.4182 3 17.6627V19.4C3 19.9601 3 20.2401 3.10899 20.454C3.20487 20.6422 3.35785 20.7951 3.54601 20.891C3.75992 21 4.03995 21 4.6 21H6.33726C6.58185 21 6.70414 21 6.81923 20.9724C6.92127 20.9479 7.01881 20.9075 7.10828 20.8526C7.2092 20.7908 7.29568 20.7043 7.46863 20.5314L12.5791 15.4209C12.8177 15.1823 12.937 15.063 13.0581 14.9953C13.1843 14.9248 13.2613 14.8987 13.4044 14.8783C13.5417 14.8586 13.7588 14.8878 14.193 14.9462C14.4569 14.9817 14.7263 15 15 15Z" stroke="%2358a6ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
-        st.markdown(f"### API Keys (Masked) {KEY_ICON_SVG}", unsafe_allow_html=True)
+        st.markdown("### API Keys (Masked) :material/vpn_key:")
         from config import PINECONE_API_KEY, OPENROUTER_API_KEY, GEMINI_API_KEY
         def mask(k): return k[:8] + "..." + k[-4:] if len(k) > 12 else "not set"
         st.code(f"PINECONE_API_KEY   = {mask(PINECONE_API_KEY)}")
