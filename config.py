@@ -48,35 +48,56 @@ OPENROUTER_APP_NAME = "RAG-NTPC"
 # - 'inclusionai/ling-3.0-flash-fin:free'
 # - 'google/gemma-4-31b-it:free' & 'google/gemma-4-26b-a4b-it:free'
 OPENROUTER_MODELS: dict[str, list[str]] = {
-    "answer": [                              # Main answer generation
+    "answer": [                              # Main answer generation — deep reasoning & factual accuracy
         "openrouter/free",
         "minimax/minimax-m3:free",
         "minimax/minimax-m2.7:free",
-        "inclusionai/ling-3.0-flash-fin:free",
         "google/gemma-4-31b-it:free",
         "google/gemma-4-26b-a4b-it:free",
+        "inclusionai/ling-3.0-flash-fin:free",
+        "z-ai/glm-5.2:free",
+        "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free",
+        "nvidia/nemotron-3.5-lightning:free",
+        "nvidia/nemotron-3-super-120b-a12b:free",
+        "nvidia/nemotron-3-ultra-550b-a55b:free",
+        "thinkingmachines/inkling:free",
+        "liquid/lfm-2.5-2.6b:free",
+        "poolside/laguna-s-2.1:free",
     ],
-    "decompose": [                           # Query planning — speed > raw quality
+    "decompose": [                           # Query planning — speed & structure
         "openrouter/free",
         "minimax/minimax-m2.7:free",
         "inclusionai/ling-3.0-flash-fin:free",
         "minimax/minimax-m3:free",
+        "google/gemma-4-26b-a4b-it:free",
+        "cohere/north-mini-code:free",
+        "thinkingmachines/inkling-small:free",
+        "liquid/lfm-2.5-2.6b:free",
+        "poolside/laguna-xs-2.1:free",
     ],
     "judge": [                               # LLM-as-judge grounding evaluation
         "openrouter/free",
         "minimax/minimax-m3:free",
         "minimax/minimax-m2.7:free",
         "google/gemma-4-31b-it:free",
+        "z-ai/glm-5.2:free",
+        "nvidia/nemotron-3.5-content-safety:free",
+        "inclusionai/ling-3.0-flash-fin:free",
     ],
-    "compress": [                            # Memory summarisation — small + fast
+    "compress": [                            # Memory summarisation — fast & concise
         "openrouter/free",
         "minimax/minimax-m2.7:free",
         "inclusionai/ling-3.0-flash-fin:free",
+        "liquid/lfm-2.5-2.6b:free",
+        "thinkingmachines/inkling-small:free",
+        "poolside/laguna-xs-2.1:free",
     ],
     "triage": [                              # Document scope selection
         "openrouter/free",
         "minimax/minimax-m2.7:free",
         "inclusionai/ling-3.0-flash-fin:free",
+        "cohere/north-mini-code:free",
+        "liquid/lfm-2.5-2.6b:free",
     ],
 }
 

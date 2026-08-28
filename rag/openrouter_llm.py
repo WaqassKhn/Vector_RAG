@@ -102,10 +102,14 @@ class OpenRouterLLM:
                 mid = m.get("id", "")
                 pricing = m.get("pricing", {})
                 prompt_price = str(pricing.get("prompt", "1"))
-                if (mid.endswith(":free") or mid == "openrouter/free") and prompt_price == "0":
+                comp_price = str(pricing.get("completion", "1"))
+                if (
+                    mid.endswith(":free")
+                    or mid == "openrouter/free"
+                    or (prompt_price == "0" and comp_price == "0")
+                ):
                     free_ids.add(mid)
 
-            # Always ensure the openrouter/free router is available if API key is active
             if self.api_key:
                 free_ids.add("openrouter/free")
 
