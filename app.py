@@ -109,21 +109,35 @@ st.markdown("""
     border-radius: 6px;
 }
 
-/* 1. New Chat Button - Green */
-[data-testid="stSidebar"] div.st-key-new_chat_btn > button,
-[data-testid="stSidebar"] button[kind="primary"],
-.stButton > button[type="primary"] {
-    background: #238636 !important;
+/* 1. New Chat Button - Green with SVG Icon */
+div.st-key-new_chat_btn > button,
+[data-testid="stSidebar"] div.st-key-new_chat_btn > button {
+    background-color: #238636 !important;
     color: #ffffff !important;
     border: 1px solid rgba(255, 255, 255, 0.15) !important;
-    font-weight: 500 !important;
+    font-weight: 600 !important;
+    display: flex !important;
+    align-items: center !important;
     justify-content: center !important;
     text-align: center !important;
+    gap: 8px !important;
 }
 
-[data-testid="stSidebar"] div.st-key-new_chat_btn > button:hover,
-.stButton > button[type="primary"]:hover {
-    background: #2ea043 !important;
+div.st-key-new_chat_btn > button::before,
+[data-testid="stSidebar"] div.st-key-new_chat_btn > button::before {
+    content: '';
+    display: inline-block;
+    width: 17px;
+    height: 17px;
+    background-image: url('data:image/svg+xml;utf8,<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 13.5V7.5M9 10.5H15M7 18V20.3355C7 20.8684 7 21.1348 7.10923 21.2716C7.20422 21.3906 7.34827 21.4599 7.50054 21.4597C7.67563 21.4595 7.88367 21.2931 8.29976 20.9602L10.6852 19.0518C11.1725 18.662 11.4162 18.4671 11.6875 18.3285C11.9282 18.2055 12.1844 18.1156 12.4492 18.0613C12.7477 18 13.0597 18 13.6837 18H16.2C17.8802 18 18.7202 18 19.362 17.673C19.9265 17.3854 20.3854 16.9265 20.673 16.362C21 15.7202 21 14.8802 21 13.2V7.8C21 6.11984 21 5.27976 20.673 4.63803C20.3854 4.07354 19.9265 3.6146 19.362 3.32698C18.7202 3 17.8802 3 16.2 3H7.8C6.11984 3 5.27976 3 4.63803 3.32698C4.07354 3.6146 3.6146 4.07354 3.32698 4.63803C3 5.27976 3 6.11984 3 7.8V14C3 14.93 3 15.395 3.10222 15.7765C3.37962 16.8117 4.18827 17.6204 5.22354 17.8978C5.60504 18 6.07003 18 7 18Z" stroke="%23ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>');
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: contain;
+}
+
+div.st-key-new_chat_btn > button:hover,
+[data-testid="stSidebar"] div.st-key-new_chat_btn > button:hover {
+    background-color: #2ea043 !important;
 }
 
 /* 2. Active Working Chat - Blue Hue */
@@ -157,21 +171,45 @@ st.markdown("""
     border-color: rgba(255, 255, 255, 0.12) !important;
 }
 
-/* 4. Delete Chat Icon Button (Minimalist X) */
-[data-testid="stSidebar"] div[class*="st-key-del_sess_"] > button {
+/* 4. Delete Chat Icon Button (Trash Bin SVG) */
+div[class*="st-key-del_sess_"] > button,
+div[class*="st-key-del_doc_"] > button {
     background-color: transparent !important;
-    color: #6e7681 !important;
+    background-image: url('data:image/svg+xml;utf8,<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16 6V5.2C16 4.0799 16 3.51984 15.782 3.09202C15.5903 2.71569 15.2843 2.40973 14.908 2.21799C14.4802 2 13.9201 2 12.8 2H11.2C10.0799 2 9.51984 2 9.09202 2.21799C8.71569 2.40973 8.40973 2.71569 8.21799 3.09202C8 3.51984 8 4.0799 8 5.2V6M3 6H21M19 6V17.2C19 18.8802 19 19.7202 18.673 20.362C18.3854 20.9265 17.9265 21.3854 17.362 21.673C16.7202 22 15.8802 22 14.2 22H9.8C8.11984 22 7.27976 22 6.63803 21.673C6.07354 21.3854 5.6146 20.9265 5.32698 20.362C5 19.7202 5 18.8802 5 17.2V6" stroke="%238b949e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>') !important;
+    background-repeat: no-repeat !important;
+    background-position: center !important;
+    background-size: 15px 15px !important;
     border: 1px solid transparent !important;
-    justify-content: center !important;
-    text-align: center !important;
-    padding: 2px 4px !important;
     min-height: 36px !important;
-    font-size: 0.8rem !important;
+    min-width: 32px !important;
+    padding: 0 !important;
 }
 
-[data-testid="stSidebar"] div[class*="st-key-del_sess_"] > button:hover {
+div[class*="st-key-del_sess_"] > button:hover,
+div[class*="st-key-del_doc_"] > button:hover {
     background-color: rgba(248, 81, 73, 0.15) !important;
-    color: #f85149 !important;
+    background-image: url('data:image/svg+xml;utf8,<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M16 6V5.2C16 4.0799 16 3.51984 15.782 3.09202C15.5903 2.71569 15.2843 2.40973 14.908 2.21799C14.4802 2 13.9201 2 12.8 2H11.2C10.0799 2 9.51984 2 9.09202 2.21799C8.71569 2.40973 8.40973 2.71569 8.21799 3.09202C8 3.51984 8 4.0799 8 5.2V6M3 6H21M19 6V17.2C19 18.8802 19 19.7202 18.673 20.362C18.3854 20.9265 17.9265 21.3854 17.362 21.673C16.7202 22 15.8802 22 14.2 22H9.8C8.11984 22 7.27976 22 6.63803 21.673C6.07354 21.3854 5.6146 20.9265 5.32698 20.362C5 19.7202 5 18.8802 5 17.2V6" stroke="%23f85149" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>') !important;
+    border-color: rgba(248, 81, 73, 0.3) !important;
+}
+
+/* 5. Cancel / Erase Icon Button (Square with X SVG) */
+div[class*="st-key-del_pref_"] > button,
+div[class*="st-key-del_fact_"] > button {
+    background-color: transparent !important;
+    background-image: url('data:image/svg+xml;utf8,<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 9L15 15M15 9L9 15M7.8 21H16.2C17.8802 21 18.7202 21 19.362 20.673C19.9265 20.3854 20.3854 19.9265 20.673 19.362C21 18.7202 21 17.8802 21 16.2V7.8C21 6.11984 21 5.27976 20.673 4.63803C20.3854 4.07354 19.9265 3.6146 19.362 3.32698C18.7202 3 17.8802 3 16.2 3H7.8C6.11984 3 5.27976 3 4.63803 3.32698C4.07354 3.6146 3.6146 4.07354 3.32698 4.63803C3 5.27976 3 6.11984 3 7.8V16.2C3 17.8802 3 18.7202 3.32698 19.362C3.6146 19.9265 4.07354 20.3854 4.63803 20.673C5.27976 21 6.11984 21 7.8 21Z" stroke="%238b949e" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>') !important;
+    background-repeat: no-repeat !important;
+    background-position: center !important;
+    background-size: 15px 15px !important;
+    border: 1px solid transparent !important;
+    min-height: 32px !important;
+    min-width: 30px !important;
+    padding: 0 !important;
+}
+
+div[class*="st-key-del_pref_"] > button:hover,
+div[class*="st-key-del_fact_"] > button:hover {
+    background-color: rgba(248, 81, 73, 0.15) !important;
+    background-image: url('data:image/svg+xml;utf8,<svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 9L15 15M15 9L9 15M7.8 21H16.2C17.8802 21 18.7202 21 19.362 20.673C19.9265 20.3854 20.3854 19.9265 20.673 19.362C21 18.7202 21 17.8802 21 16.2V7.8C21 6.11984 21 5.27976 20.673 4.63803C20.3854 4.07354 19.9265 3.6146 19.362 3.32698C18.7202 3 17.8802 3 16.2 3H7.8C6.11984 3 5.27976 3 4.63803 3.32698C4.07354 3.6146 3.6146 4.07354 3.32698 4.63803C3 5.27976 3 6.11984 3 7.8V16.2C3 17.8802 3 18.7202 3.32698 19.362C3.6146 19.9265 4.07354 20.3854 4.63803 20.673C5.27976 21 6.11984 21 7.8 21Z" stroke="%23f85149" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>') !important;
     border-color: rgba(248, 81, 73, 0.3) !important;
 }
 
@@ -366,8 +404,8 @@ def render_sidebar():
         st.caption("Document Intelligence Engine")
         st.divider()
 
-        # 1. New Chat Button (Green)
-        if st.button("+ New Chat", key="new_chat_btn", use_container_width=True, type="primary"):
+        # 1. New Chat Button (Green with SVG icon + text)
+        if st.button("New Chat", key="new_chat_btn", use_container_width=True, type="primary"):
             new_sid = db.create_session(title="New Conversation")
             st.session_state.active_session_id = new_sid
             st.rerun()
@@ -400,7 +438,7 @@ def render_sidebar():
                             st.rerun()
 
                 with col_del:
-                    if st.button("✕", key=f"del_sess_{sid}", help=f"Delete '{stitle}'", type="secondary"):
+                    if st.button("", key=f"del_sess_{sid}", help=f"Delete '{stitle}'", type="secondary"):
                         db.delete_session(sid)
                         remaining = db.list_sessions(limit=1)
                         st.session_state.active_session_id = remaining[0]["id"] if remaining else db.create_session(title="New Conversation")
@@ -424,9 +462,14 @@ def render_sidebar():
             active = llm.get_active_models()
             for task, model in active.items():
                 if model:
-                    short = model.split("/")[-1].replace(":free", "")
+                    friendly_name = format_model_name(model)
                     st.markdown(
-                        f'<span class="model-live">●</span> **{task}**: `{short}`',
+                        f'<span class="model-live">●</span> **{task}**: `{friendly_name}`',
+                        unsafe_allow_html=True,
+                    )
+                else:
+                    st.markdown(
+                        f'<span class="model-down">●</span> **{task}**: offline',
                         unsafe_allow_html=True,
                     )
                 else:
@@ -814,13 +857,40 @@ def render_documents_tab():
         col_chunks.markdown(f"**{info['chunk_count']}** chunks")
         indexed_at = info.get("indexed_at", "—")[:10]
         col_date.caption(f"Indexed: {indexed_at}")
-        if col_del.button("Delete", key=f"del_{filename}", help=f"Delete {filename}", type="secondary"):
+        if col_del.button("", key=f"del_doc_{filename}", help=f"Delete {filename}", type="secondary"):
             deleted = vdb.delete_by_filename(filename)
             st.success(f"Deleted {deleted} chunks for `{filename}`.")
             st.rerun()
 
 
 # ─── Tab 3: Settings & Cognitive Memory Explorer ──────────────────────────────
+
+MODEL_FRIENDLY_NAMES = {
+    "openrouter/free": "OpenRouter Free Router (Dynamic Multi-Model)",
+    "minimax/minimax-m3:free": "MiniMax M3 (Free)",
+    "minimax/minimax-m2.7:free": "MiniMax M2.7 (Free)",
+    "google/gemma-4-31b-it:free": "Google Gemma 4 31B (Free)",
+    "google/gemma-4-26b-a4b-it:free": "Google Gemma 4 26B A4B (Free)",
+    "inclusionai/ling-3.0-flash-fin:free": "InclusionAI Ling 3.0 Flash (Free)",
+    "z-ai/glm-5.2:free": "Z.ai GLM 5.2 (Free)",
+    "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free": "NVIDIA Nemotron 3 Nano Omni (Free)",
+    "nvidia/nemotron-3.5-lightning:free": "NVIDIA Nemotron 3.5 Lightning (Free)",
+    "nvidia/nemotron-3-super-120b-a12b:free": "NVIDIA Nemotron 3 Super (Free)",
+    "nvidia/nemotron-3-ultra-550b-a55b:free": "NVIDIA Nemotron 3 Ultra (Free)",
+    "thinkingmachines/inkling:free": "Thinking Machines Inkling (Free)",
+    "liquid/lfm-2.5-2.6b:free": "LiquidAI LFM 2.5 (Free)",
+    "poolside/laguna-s-2.1:free": "Poolside Laguna S 2.1 (Free)",
+    "cohere/north-mini-code:free": "Cohere North Mini Code (Free)",
+}
+
+def format_model_name(model_id: str) -> str:
+    if not model_id:
+        return "offline"
+    if model_id in MODEL_FRIENDLY_NAMES:
+        return MODEL_FRIENDLY_NAMES[model_id]
+    cleaned = model_id.split("/")[-1].replace(":free", " (Free)")
+    return cleaned.replace("-", " ").title()
+
 
 def render_settings_tab():
     db = get_database_manager()
@@ -840,7 +910,7 @@ def render_settings_tab():
                 col_k, col_v, col_d = st.columns([2.5, 4, 1])
                 col_k.markdown(f"**{k}**")
                 col_v.caption(v)
-                if col_d.button("X", key=f"del_pref_{k}"):
+                if col_d.button("", key=f"del_pref_{k}", help=f"Erase preference '{k}'", type="secondary"):
                     hub.semantic_memory.delete_preference(k)
                     st.rerun()
 
@@ -860,7 +930,7 @@ def render_settings_tab():
                 for f in facts:
                     col_f, col_fd = st.columns([6, 1])
                     col_f.markdown(f"- **{f['subject']}** — *{f['predicate']}*: `{f['object']}`")
-                    if col_fd.button("X", key=f"del_fact_{f['id']}"):
+                    if col_fd.button("", key=f"del_fact_{f['id']}", help="Erase domain fact", type="secondary"):
                         hub.semantic_memory.delete_fact(f["id"])
                         st.rerun()
             else:
@@ -913,8 +983,9 @@ def render_settings_tab():
         active_models = llm.get_active_models()
         for task, model in active_models.items():
             if model:
+                friendly_name = format_model_name(model)
                 st.markdown(
-                    f'<span class="model-live">●</span> **{task}** -> `{model}`',
+                    f'<span class="model-live">●</span> **{task}** -> `{friendly_name}`',
                     unsafe_allow_html=True,
                 )
             else:
@@ -945,7 +1016,8 @@ def render_settings_tab():
 
         st.divider()
 
-        st.markdown("### API Keys (Masked)")
+        KEY_ICON_SVG = '<svg style="display:inline-block;vertical-align:middle;width:20px;height:20px;margin-left:6px;" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M15 9H15.01M15 15C18.3137 15 21 12.3137 21 9C21 5.68629 18.3137 3 15 3C11.6863 3 9 5.68629 9 9C9 9.27368 9.01832 9.54308 9.05381 9.80704C9.11218 10.2412 9.14136 10.4583 9.12172 10.5956C9.10125 10.7387 9.0752 10.8157 9.00469 10.9419C8.937 11.063 8.81771 11.1823 8.57913 11.4209L3.46863 16.5314C3.29568 16.7043 3.2092 16.7908 3.14736 16.8917C3.09253 16.9812 3.05213 17.0787 3.02763 17.1808C3 17.2959 3 17.4182 3 17.6627V19.4C3 19.9601 3 20.2401 3.10899 20.454C3.20487 20.6422 3.35785 20.7951 3.54601 20.891C3.75992 21 4.03995 21 4.6 21H6.33726C6.58185 21 6.70414 21 6.81923 20.9724C6.92127 20.9479 7.01881 20.9075 7.10828 20.8526C7.2092 20.7908 7.29568 20.7043 7.46863 20.5314L12.5791 15.4209C12.8177 15.1823 12.937 15.063 13.0581 14.9953C13.1843 14.9248 13.2613 14.8987 13.4044 14.8783C13.5417 14.8586 13.7588 14.8878 14.193 14.9462C14.4569 14.9817 14.7263 15 15 15Z" stroke="%2358a6ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+        st.markdown(f"### API Keys (Masked) {KEY_ICON_SVG}", unsafe_allow_html=True)
         from config import PINECONE_API_KEY, OPENROUTER_API_KEY, GEMINI_API_KEY
         def mask(k): return k[:8] + "..." + k[-4:] if len(k) > 12 else "not set"
         st.code(f"PINECONE_API_KEY   = {mask(PINECONE_API_KEY)}")
