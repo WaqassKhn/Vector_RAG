@@ -95,58 +95,83 @@ st.markdown("""
     border-color: rgba(255, 255, 255, 0.08);
 }
 
-/* Gemini-style conversation buttons in sidebar */
-.chat-list-container {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    margin-top: 8px;
-    margin-bottom: 12px;
+/* Sidebar conversation buttons styling */
+[data-testid="stSidebar"] [data-testid="stButton"] > button {
+    text-align: left;
+    justify-content: flex-start;
+    padding: 6px 10px;
+    min-height: 36px;
+    font-size: 0.85rem;
+    border-radius: 6px;
 }
 
-.stButton button {
-    border-radius: 8px;
-    font-size: 0.88rem;
-    font-weight: 500;
-    transition: all 0.15s ease-in-out;
+/* 1. New Chat Button - Green */
+[data-testid="stSidebar"] div.st-key-new_chat_btn > button,
+[data-testid="stSidebar"] button[kind="primary"],
+.stButton > button[type="primary"] {
+    background: #238636 !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.15) !important;
+    font-weight: 500 !important;
+    justify-content: center !important;
+    text-align: center !important;
 }
 
-/* Active chat highlight */
-.chat-btn-active button {
-    background-color: rgba(56, 139, 253, 0.15) !important;
+[data-testid="stSidebar"] div.st-key-new_chat_btn > button:hover,
+.stButton > button[type="primary"]:hover {
+    background: #2ea043 !important;
+}
+
+/* 2. Active Working Chat - Blue Hue */
+[data-testid="stSidebar"] div[class*="st-key-chat_item_active_"] > button {
+    background-color: rgba(56, 139, 253, 0.18) !important;
     color: #58a6ff !important;
-    border: 1px solid rgba(56, 139, 253, 0.4) !important;
+    border: 1px solid rgba(56, 139, 253, 0.45) !important;
     font-weight: 600 !important;
-}
-
-.chat-btn-inactive button {
-    background-color: transparent !important;
-    color: #c9d1d9 !important;
-    border: 1px solid transparent !important;
     text-align: left !important;
     justify-content: flex-start !important;
 }
 
-.chat-btn-inactive button:hover {
-    background-color: rgba(255, 255, 255, 0.06) !important;
-    color: #ffffff !important;
-    border-color: rgba(255, 255, 255, 0.1) !important;
+[data-testid="stSidebar"] div[class*="st-key-chat_item_active_"] > button:hover {
+    background-color: rgba(56, 139, 253, 0.28) !important;
+    color: #79c0ff !important;
 }
 
-/* Primary buttons */
-button[kind="primary"], .stButton > button[type="primary"] {
-    background: #238636 !important;
-    color: #ffffff !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    border-radius: 8px;
-    font-weight: 500;
+/* 3. Inactive Chats - Grey Hue */
+[data-testid="stSidebar"] div[class*="st-key-chat_item_inactive_"] > button {
+    background-color: rgba(255, 255, 255, 0.035) !important;
+    color: #8b949e !important;
+    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    font-weight: 400 !important;
+    text-align: left !important;
+    justify-content: flex-start !important;
 }
 
-button[kind="primary"]:hover, .stButton > button[type="primary"]:hover {
-    background: #2ea043 !important;
+[data-testid="stSidebar"] div[class*="st-key-chat_item_inactive_"] > button:hover {
+    background-color: rgba(255, 255, 255, 0.08) !important;
+    color: #e6edf3 !important;
+    border-color: rgba(255, 255, 255, 0.12) !important;
 }
 
-/* Secondary buttons */
+/* 4. Delete Chat Icon Button (Minimalist X) */
+[data-testid="stSidebar"] div[class*="st-key-del_sess_"] > button {
+    background-color: transparent !important;
+    color: #6e7681 !important;
+    border: 1px solid transparent !important;
+    justify-content: center !important;
+    text-align: center !important;
+    padding: 2px 4px !important;
+    min-height: 36px !important;
+    font-size: 0.8rem !important;
+}
+
+[data-testid="stSidebar"] div[class*="st-key-del_sess_"] > button:hover {
+    background-color: rgba(248, 81, 73, 0.15) !important;
+    color: #f85149 !important;
+    border-color: rgba(248, 81, 73, 0.3) !important;
+}
+
+/* Secondary general buttons outside sidebar */
 button[kind="secondary"], .stButton > button[type="secondary"] {
     background-color: rgba(255, 255, 255, 0.05) !important;
     color: #c9d1d9 !important;
@@ -337,13 +362,13 @@ def render_sidebar():
         st.caption("Document Intelligence Engine")
         st.divider()
 
-        # 1. New Chat Button
-        if st.button("+ New Chat", use_container_width=True, type="primary"):
+        # 1. New Chat Button (Green)
+        if st.button("+ New Chat", key="new_chat_btn", use_container_width=True, type="primary"):
             new_sid = db.create_session(title="New Conversation")
             st.session_state.active_session_id = new_sid
             st.rerun()
 
-        # 2. Gemini-Style Chat History List (No dropdown)
+        # 2. Gemini-Style Chat History List with direct inline delete
         st.markdown("##### Recent Chats")
         sessions = db.list_sessions(limit=30)
         current_sid = st.session_state.get("active_session_id")
@@ -355,34 +380,26 @@ def render_sidebar():
                 is_active = (sid == current_sid)
 
                 # Truncate title cleanly
-                display_title = stitle if len(stitle) <= 26 else stitle[:24] + "..."
+                display_title = stitle if len(stitle) <= 22 else stitle[:20] + "..."
 
-                # Style as active or inactive
-                btn_type = "primary" if is_active else "secondary"
-                if st.button(
-                    display_title,
-                    key=f"chat_item_{sid}",
-                    use_container_width=True,
-                    type=btn_type,
-                    help=stitle,
-                ):
-                    if sid != current_sid:
-                        st.session_state.active_session_id = sid
-                        st.rerun()
+                col_chat, col_del = st.columns([0.84, 0.16])
+                with col_chat:
+                    btn_key = f"chat_item_active_{sid}" if is_active else f"chat_item_inactive_{sid}"
+                    if st.button(
+                        display_title,
+                        key=btn_key,
+                        use_container_width=True,
+                        help=stitle,
+                    ):
+                        if sid != current_sid:
+                            st.session_state.active_session_id = sid
+                            st.rerun()
 
-            # Active chat settings (inline expander for rename / delete)
-            with st.expander("Manage Active Chat", expanded=False):
-                active_sess = db.get_session(current_sid)
-                if active_sess:
-                    new_title = st.text_input("Title", value=active_sess["title"], label_visibility="collapsed")
-                    col_ren, col_del = st.columns(2)
-                    if col_ren.button("Save", use_container_width=True):
-                        db.update_session_title(current_sid, new_title)
-                        st.rerun()
-                    if col_del.button("Delete", type="secondary", use_container_width=True):
-                        db.delete_session(current_sid)
+                with col_del:
+                    if st.button("✕", key=f"del_sess_{sid}", help=f"Delete '{stitle}'", type="secondary"):
+                        db.delete_session(sid)
                         remaining = db.list_sessions(limit=1)
-                        st.session_state.active_session_id = remaining[0]["id"] if remaining else db.create_session()
+                        st.session_state.active_session_id = remaining[0]["id"] if remaining else db.create_session(title="New Conversation")
                         st.rerun()
 
         st.divider()
