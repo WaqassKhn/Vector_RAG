@@ -35,6 +35,10 @@ BASE_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(BASE_DIR))
 load_dotenv()
 
+ASSETS_DIR = BASE_DIR / "assets"
+USER_AVATAR = str(ASSETS_DIR / "user_icon.svg") if (ASSETS_DIR / "user_icon.svg").exists() else "user"
+ASSISTANT_AVATAR = str(ASSETS_DIR / "assistant_icon.svg") if (ASSETS_DIR / "assistant_icon.svg").exists() else "assistant"
+
 from config import (
     VECTOR_DB_DIR, UPLOADS_DIR, DB_PATH,
     INITIAL_TOP_K, RERANKED_TOP_K,
@@ -472,7 +476,9 @@ def render_chat_tab():
 
     # Replay message history
     for msg in persistent_messages:
-        with st.chat_message(msg["role"]):
+        role = msg["role"]
+        avatar = USER_AVATAR if role == "user" else ASSISTANT_AVATAR
+        with st.chat_message(role, avatar=avatar):
             st.markdown(msg["content"])
             _render_message_extras(msg)
 
@@ -493,10 +499,10 @@ def render_chat_tab():
         role="user",
         content=query,
     )
-    with st.chat_message("user"):
+    with st.chat_message("user", avatar=USER_AVATAR):
         st.markdown(query)
 
-    with st.chat_message("assistant"):
+    with st.chat_message("assistant", avatar=ASSISTANT_AVATAR):
         tracer = ExecutionTracer()
         try:
             # 1. Embed query
