@@ -96,6 +96,19 @@ class CognitiveMemoryHub:
 
         return "\n\n".join(sections)
 
+    def build_augmented_prompt_context(
+        self,
+        query: str,
+        query_embedding: Optional[Union[np.ndarray, List[float]]] = None,
+        session_id: Optional[str] = None,
+    ) -> str:
+        """Alias for build_cognitive_context."""
+        return self.build_cognitive_context(
+            query=query,
+            query_embedding=query_embedding,
+            session_id=session_id,
+        )
+
     # ─── Post-Interaction Lifecycle ───────────────────────────────────────────
 
     def post_interaction_update(

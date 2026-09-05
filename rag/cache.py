@@ -45,13 +45,19 @@ class SemanticAnswerCache:
 
     def _cosine_similarity(self, a: np.ndarray, b: np.ndarray) -> float:
         """Cosine similarity between two 1-D float32 vectors."""
+        if a.shape != b.shape:
+            return 0.0
         norm_a = np.linalg.norm(a)
         norm_b = np.linalg.norm(b)
         if norm_a < 1e-10 or norm_b < 1e-10:
             return 0.0
         return float(np.dot(a, b) / (norm_a * norm_b))
 
-    def lookup(self, query_embedding: np.ndarray) -> Optional[dict]:
+    def lookup(
+        self,
+        query_embedding: np.ndarray,
+        query_text: str = "",
+    ) -> Optional[dict]:
         """
         Returns cached result if a stored query has cosine similarity >= threshold.
         Returns None on cache miss.
@@ -77,7 +83,9 @@ class SemanticAnswerCache:
                 "answer": best_entry["answer"],
                 "citations": best_entry["citations"],
                 "cache_hit": True,
+                "similarity": round(best_sim, 4),
                 "cache_similarity": round(best_sim, 4),
+                "matched_query": best_entry.get("query_text", ""),
             }
 
         self._miss_count += 1

@@ -1,15 +1,14 @@
 """
-app.py — RAG_NTPC Production Application with Persistent Multi-Session Memory
-─────────────────────────────────────────────────────────────────────────────
+app.py — CogniRAG: Production Application with Persistent Multi-Session Cognitive Memory
+────────────────────────────────────────────────────────────────────────────────────────
 Features:
+  - Dark Minimal Palette: Deep obsidian black (#080c0a) and dark emerald green (#10b981).
+  - Terminal Green Branding: "CogniRAG" styled in high-tech terminal phosphor green.
   - Persistent SQLite Database (data/rag_app.db): Zero data loss on interface close or reload.
-  - Multi-Session Chat Manager: Gemini/ChatGPT-style flat sidebar conversation list.
+  - Multi-Session Chat Manager: Flat sidebar conversation list with active session indicator.
+  - Sidebar Navigation: Documents and Settings buttons in 1 line at the bottom of the dashboard.
   - Multi-Tier Cognitive Memory Engine: Working, Episodic, Semantic, and Procedural memory.
-  - 3-Tab Minimalist UI:
-      Tab 1: Chat      — streaming RAG chat with grounding audit, citations, and session history
-      Tab 2: Documents — upload, index, and manage documents
-      Tab 3: Settings  — cognitive memory explorer, model status, database controls
-  - Sidebar: Gemini-style chat list + cognitive memory summary + active models.
+  - Clean Minimalist Main Chat: Uncluttered conversation view with grounding audit & citations.
 """
 
 import os
@@ -34,6 +33,14 @@ from dotenv import load_dotenv
 BASE_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(BASE_DIR))
 load_dotenv()
+
+# ─── Page config (must be first Streamlit command) ───────────────────────────
+st.set_page_config(
+    page_title="CogniRAG",
+    page_icon="🌿",
+    layout="wide",
+    initial_sidebar_state="expanded",
+)
 
 ASSETS_DIR = BASE_DIR / "assets"
 USER_AVATAR = str(ASSETS_DIR / "user_icon.svg") if (ASSETS_DIR / "user_icon.svg").exists() else "user"
@@ -63,108 +70,278 @@ from rag.error_handler import ErrorDiagnosticManager
 
 logging.basicConfig(level=logging.WARNING)
 
-# ─── Page config ─────────────────────────────────────────────────────────────
-
-st.set_page_config(
-    page_title="RAG Assistant — Document Intelligence",
-    layout="wide",
-    initial_sidebar_state="expanded",
-)
-
-# Soft, minimalist, dark aesthetic
+# ─── Dark Minimal (Dark Green & Black) CSS Design System ─────────────────────
 st.markdown("""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+:root {
+    --app-bg: #080c0a;
+    --app-bg-soft: #0e1511;
+    --surface: #101713;
+    --surface-soft: #16221c;
+    --surface-muted: #1d2c24;
+    --sidebar-bg: #060907;
+    --sidebar-surface: #0c130f;
+    --sidebar-surface-hover: #131e18;
+    --text: #f3f4f6;
+    --text-muted: #9ca3af;
+    --text-subtle: #6b7280;
+    --line: #18261e;
+    --line-strong: #23372b;
+    --accent: #10b981;
+    --accent-hover: #059669;
+    --accent-dark: #047857;
+    --accent-soft: rgba(16, 185, 129, 0.08);
+    --accent-border: rgba(16, 185, 129, 0.24);
+    --terminal-green: #22c55e;
+    --blue: #38bdf8;
+    --green: #10b981;
+    --red: #f87171;
+    --warning: #fbbf24;
+    --shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
 
 * {
-    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Inter, Helvetica, Arial, sans-serif;
     letter-spacing: -0.01em;
 }
 
-/* Background */
+/* Base App Background & Text */
 .stApp {
-    background-color: #0d1117;
-    background-image: radial-gradient(circle at 50% 0%, #161b22 0%, #0d1117 75%);
-    color: #e6edf3;
+    background-color: var(--app-bg) !important;
+    color: var(--text) !important;
 }
 
-/* Sidebar */
+[data-testid="stAppViewContainer"] {
+    background-color: var(--app-bg) !important;
+}
+
+[data-testid="stHeader"] {
+    background-color: transparent !important;
+}
+
+.main .block-container,
+[data-testid="stAppViewContainer"] .main .block-container {
+    max-width: 1040px;
+    padding-top: 1rem;
+    padding-bottom: 5rem;
+}
+
+/* Custom Minimal Scrollbar */
+::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+::-webkit-scrollbar-track {
+    background: var(--app-bg);
+}
+::-webkit-scrollbar-thumb {
+    background: var(--line-strong);
+    border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: var(--accent-dark);
+}
+
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+    color: var(--text) !important;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+}
+
+h1 {
+    font-size: 1.5rem;
+    line-height: 1.25;
+}
+
+h3 {
+    font-size: 1.15rem;
+    margin-bottom: 0.4rem;
+}
+
+[data-testid="stMarkdownContainer"] p,
+[data-testid="stMarkdownContainer"] li {
+    line-height: 1.6;
+    color: var(--text);
+}
+
+/* ─── Sidebar Styling ─── */
 [data-testid="stSidebar"] {
-    background-color: #161b22;
-    border-right: 1px solid rgba(255, 255, 255, 0.08);
+    background-color: var(--sidebar-bg) !important;
+    border-right: 1px solid var(--line) !important;
+}
+
+[data-testid="stSidebar"] > div:first-child {
+    background-color: var(--sidebar-bg) !important;
+}
+
+.sidebar-header {
+    padding: 0.35rem 0 0.85rem;
+    margin-bottom: 0.85rem;
+    border-bottom: 1px solid var(--line);
+}
+
+/* Terminal Green CogniRAG Title */
+.sidebar-title {
+    color: var(--terminal-green) !important;
+    font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'SF Mono', Consolas, monospace !important;
+    font-size: 1.4rem;
+    font-weight: 700;
+    line-height: 1.2;
+    margin: 0 0 0.25rem 0;
+    letter-spacing: -0.01em;
+    text-shadow: 0 0 10px rgba(34, 197, 94, 0.45);
+}
+
+.sidebar-desc {
+    color: var(--text-muted);
+    font-size: 0.78rem;
+    line-height: 1.35;
+    margin: 0;
+}
+
+[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] h3,
+[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] h5 {
+    color: var(--text) !important;
+}
+
+[data-testid="stSidebar"] [data-testid="stMarkdownContainer"] p,
+[data-testid="stSidebar"] [data-testid="stCaptionContainer"] {
+    color: var(--text-muted) !important;
 }
 
 [data-testid="stSidebar"] hr {
+    margin: 0.85rem 0;
+    border-color: var(--line) !important;
+}
+
+hr {
+    border-color: var(--line) !important;
     margin: 1rem 0;
-    border-color: rgba(255, 255, 255, 0.08);
 }
 
-/* Sidebar conversation buttons styling */
-[data-testid="stSidebar"] [data-testid="stButton"] > button {
-    text-align: left;
-    justify-content: flex-start;
-    padding: 6px 10px;
-    min-height: 36px;
-    font-size: 0.85rem;
+/* ─── Buttons ─── */
+.stButton > button {
     border-radius: 6px;
+    font-weight: 500;
+    font-size: 0.88rem;
+    transition: all 140ms ease;
+    border: 1px solid var(--line-strong);
+    background-color: var(--surface);
+    color: var(--text);
 }
 
-/* 1. New Chat Button - Green */
+.stButton > button:focus-visible {
+    box-shadow: 0 0 0 2px var(--accent-border);
+    outline: none;
+}
+
+/* New chat button & Primary buttons: ALWAYS solid black text & icon */
+button[kind="primary"],
+button[kind="primary"] *,
+button[kind="primary"] p,
+button[kind="primary"] span,
+button[kind="primary"] div,
+button[data-testid="baseButton-primary"],
+button[data-testid="baseButton-primary"] *,
+button[data-testid="baseButton-primary"] p,
+button[data-testid="baseButton-primary"] span,
+button[data-testid="baseButton-primary"] svg,
+.stButton > button[type="primary"],
+.stButton > button[type="primary"] *,
+.stButton > button[type="primary"] p,
+.stButton > button[type="primary"] span,
+div.st-key-new_chat_btn button,
+div.st-key-new_chat_btn button *,
+div.st-key-new_chat_btn button p,
+div.st-key-new_chat_btn button span,
+div.st-key-new_chat_btn button svg,
+[data-testid="stSidebar"] div.st-key-new_chat_btn button,
+[data-testid="stSidebar"] div.st-key-new_chat_btn button *,
+[data-testid="stSidebar"] div.st-key-new_chat_btn button p,
+[data-testid="stSidebar"] div.st-key-new_chat_btn button span,
+[data-testid="stSidebar"] div.st-key-new_chat_btn button svg {
+    background-color: #10b981 !important;
+    color: #000000 !important;
+    fill: #000000 !important;
+    stroke: #000000 !important;
+    -webkit-text-fill-color: #000000 !important;
+    border: 1px solid #10b981 !important;
+    font-weight: 700 !important;
+}
+
+/* Hover state for New chat / Primary buttons */
+button[kind="primary"]:hover,
+button[kind="primary"]:hover *,
+button[data-testid="baseButton-primary"]:hover,
+button[data-testid="baseButton-primary"]:hover *,
+.stButton > button[type="primary"]:hover,
+.stButton > button[type="primary"]:hover *,
+div.st-key-new_chat_btn button:hover,
+div.st-key-new_chat_btn button:hover *,
+[data-testid="stSidebar"] div.st-key-new_chat_btn button:hover,
+[data-testid="stSidebar"] div.st-key-new_chat_btn button:hover * {
+    background-color: #059669 !important;
+    border-color: #059669 !important;
+    color: #000000 !important;
+    fill: #000000 !important;
+    stroke: #000000 !important;
+    -webkit-text-fill-color: #000000 !important;
+}
+
+/* New chat button layout */
 div.st-key-new_chat_btn > button,
 [data-testid="stSidebar"] div.st-key-new_chat_btn > button {
-    background-color: #238636 !important;
-    color: #ffffff !important;
-    border: 1px solid rgba(255, 255, 255, 0.2) !important;
-    font-weight: 600 !important;
+    width: 100%;
     justify-content: center !important;
     text-align: center !important;
     font-size: 0.9rem !important;
+    padding: 8px 12px !important;
 }
 
-div.st-key-new_chat_btn > button:hover,
-[data-testid="stSidebar"] div.st-key-new_chat_btn > button:hover {
-    background-color: #2ea043 !important;
-}
-
-/* 2. Active Working Chat - Blue Hue */
+/* Chat list items */
 [data-testid="stSidebar"] div[class*="st-key-chat_item_active_"] > button {
-    background-color: rgba(56, 139, 253, 0.18) !important;
-    color: #58a6ff !important;
-    border: 1px solid rgba(56, 139, 253, 0.45) !important;
+    width: 100%;
+    background-color: var(--accent-soft) !important;
+    color: #34d399 !important;
+    border: 1px solid var(--accent-border) !important;
     font-weight: 600 !important;
     text-align: left !important;
     justify-content: flex-start !important;
+    padding: 7px 10px !important;
+    min-height: 38px !important;
 }
 
 [data-testid="stSidebar"] div[class*="st-key-chat_item_active_"] > button:hover {
-    background-color: rgba(56, 139, 253, 0.28) !important;
-    color: #79c0ff !important;
+    background-color: rgba(16, 185, 129, 0.16) !important;
+    color: #6ee7b7 !important;
 }
 
-/* 3. Inactive Chats - Grey Hue */
 [data-testid="stSidebar"] div[class*="st-key-chat_item_inactive_"] > button {
-    background-color: rgba(255, 255, 255, 0.035) !important;
-    color: #8b949e !important;
-    border: 1px solid rgba(255, 255, 255, 0.06) !important;
+    width: 100%;
+    background-color: transparent !important;
+    color: var(--text-muted) !important;
+    border: 1px solid transparent !important;
     font-weight: 400 !important;
     text-align: left !important;
     justify-content: flex-start !important;
+    padding: 7px 10px !important;
+    min-height: 38px !important;
 }
 
 [data-testid="stSidebar"] div[class*="st-key-chat_item_inactive_"] > button:hover {
-    background-color: rgba(255, 255, 255, 0.08) !important;
-    color: #e6edf3 !important;
-    border-color: rgba(255, 255, 255, 0.12) !important;
+    background-color: var(--sidebar-surface-hover) !important;
+    color: var(--text) !important;
+    border-color: var(--line) !important;
 }
 
-/* 4. Delete Chat & Document Icon Button (Trash Bin) */
-div[class*="st-key-del_sess_"] > button,
-div[class*="st-key-del_doc_"] > button {
-    background-color: rgba(255, 255, 255, 0.04) !important;
-    color: #e6edf3 !important;
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+/* Delete buttons */
+div[class*="st-key-del_sess_"] > button {
+    background-color: transparent !important;
+    color: var(--text-subtle) !important;
+    border: 1px solid transparent !important;
     border-radius: 6px !important;
-    min-height: 36px !important;
+    min-height: 38px !important;
     min-width: 34px !important;
     padding: 0 !important;
     display: flex !important;
@@ -172,19 +349,18 @@ div[class*="st-key-del_doc_"] > button {
     justify-content: center !important;
 }
 
-div[class*="st-key-del_sess_"] > button:hover,
-div[class*="st-key-del_doc_"] > button:hover {
-    background-color: rgba(248, 81, 73, 0.2) !important;
-    color: #ff7b72 !important;
-    border-color: rgba(248, 81, 73, 0.4) !important;
+div[class*="st-key-del_sess_"] > button:hover {
+    background-color: rgba(248, 113, 113, 0.12) !important;
+    color: var(--red) !important;
+    border-color: rgba(248, 113, 113, 0.25) !important;
 }
 
-/* 5. Cancel / Erase Icon Button (Circular X) */
+div[class*="st-key-del_doc_"] > button,
 div[class*="st-key-del_pref_"] > button,
 div[class*="st-key-del_fact_"] > button {
-    background-color: rgba(255, 255, 255, 0.04) !important;
-    color: #e6edf3 !important;
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
+    background-color: var(--surface) !important;
+    color: var(--text-muted) !important;
+    border: 1px solid var(--line) !important;
     border-radius: 6px !important;
     min-height: 32px !important;
     min-width: 32px !important;
@@ -194,125 +370,311 @@ div[class*="st-key-del_fact_"] > button {
     justify-content: center !important;
 }
 
+div[class*="st-key-del_doc_"] > button:hover,
 div[class*="st-key-del_pref_"] > button:hover,
 div[class*="st-key-del_fact_"] > button:hover {
-    background-color: rgba(248, 81, 73, 0.2) !important;
-    color: #ff7b72 !important;
-    border-color: rgba(248, 81, 73, 0.4) !important;
+    background-color: rgba(248, 113, 113, 0.12) !important;
+    color: var(--red) !important;
+    border-color: rgba(248, 113, 113, 0.25) !important;
 }
 
-/* Secondary general buttons outside sidebar */
 button[kind="secondary"], .stButton > button[type="secondary"] {
-    background-color: rgba(255, 255, 255, 0.05) !important;
-    color: #c9d1d9 !important;
-    border: 1px solid rgba(255, 255, 255, 0.1) !important;
-    border-radius: 8px;
+    background-color: var(--surface) !important;
+    color: var(--text) !important;
+    border: 1px solid var(--line-strong) !important;
 }
 
 button[kind="secondary"]:hover, .stButton > button[type="secondary"]:hover {
-    background-color: rgba(255, 255, 255, 0.1) !important;
-    color: #ffffff !important;
+    background-color: var(--surface-soft) !important;
+    color: var(--text) !important;
+    border-color: var(--accent) !important;
 }
 
-/* Tabs */
+/* Sidebar Nav Buttons (1 line, 2 columns at bottom) */
+div.st-key-nav_docs_btn > button,
+div.st-key-nav_set_btn > button,
+div.st-key-nav_chat_btn > button {
+    width: 100%;
+    min-height: 38px;
+    font-size: 0.84rem;
+    padding: 6px 8px;
+}
+
+/* ─── Tabs Styling ─── */
 .stTabs [data-baseweb="tab-list"] {
-    background: rgba(22, 27, 34, 0.7);
-    border-radius: 10px;
-    padding: 4px;
-    gap: 4px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: transparent;
+    border-radius: 0;
+    padding: 0;
+    gap: 1.5rem;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 1.25rem;
 }
 
 .stTabs [data-baseweb="tab"] {
     background: transparent;
-    border-radius: 6px;
-    color: #8b949e;
+    border-radius: 0;
+    color: var(--text-muted);
     font-weight: 500;
-    padding: 6px 18px;
-    border: none;
-    font-size: 0.9rem;
+    padding: 0.5rem 0.2rem 0.75rem;
+    border: none !important;
+    border-bottom: 2px solid transparent !important;
+    font-size: 0.95rem;
+    transition: color 140ms ease, border-color 140ms ease;
+}
+
+.stTabs [data-baseweb="tab"]:hover {
+    color: var(--text);
 }
 
 .stTabs [aria-selected="true"] {
-    background: rgba(56, 139, 253, 0.15) !important;
-    color: #58a6ff !important;
-    border: 1px solid rgba(56, 139, 253, 0.3) !important;
+    background: transparent !important;
+    color: var(--accent) !important;
+    border-bottom-color: var(--accent) !important;
+    font-weight: 600 !important;
 }
 
-/* Chat messages */
-[data-testid="stChatMessage"] {
-    background: rgba(22, 27, 34, 0.5);
-    border: 1px solid rgba(255, 255, 255, 0.06);
-    border-radius: 10px;
-    margin-bottom: 8px;
+/* ─── Chat Empty State ─── */
+.chat-empty-state {
+    text-align: center;
+    padding: 3.5rem 1.5rem 2.5rem;
+    max-width: 580px;
+    margin: 0 auto;
 }
 
-/* Metric cards */
-[data-testid="stMetric"] {
-    background: rgba(22, 27, 34, 0.6);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+.chat-empty-icon {
+    font-size: 2.2rem;
+    margin-bottom: 0.75rem;
+    display: inline-block;
+    color: var(--accent);
+}
+
+.chat-empty-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 0.4rem;
+}
+
+.chat-empty-desc {
+    font-size: 0.88rem;
+    color: var(--text-muted);
+    line-height: 1.5;
+    margin-bottom: 1.75rem;
+}
+
+.prompt-chips {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    text-align: left;
+}
+
+.prompt-chip {
+    background: var(--surface);
+    border: 1px solid var(--line);
     border-radius: 8px;
-    padding: 10px;
+    padding: 0.65rem 0.9rem;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    transition: border-color 140ms ease, background 140ms ease;
 }
 
-/* Badges */
+.prompt-chip:hover {
+    border-color: var(--accent-border);
+    background: var(--surface-soft);
+    color: var(--text);
+}
+
+/* ─── Chat Messages ─── */
+[data-testid="stChatMessage"] {
+    background-color: var(--surface) !important;
+    border: 1px solid var(--line) !important;
+    border-radius: 8px !important;
+    box-shadow: var(--shadow);
+    margin-bottom: 0.75rem !important;
+    padding: 0.85rem 1rem !important;
+}
+
+[data-testid="stChatMessage"] [data-testid="stMarkdownContainer"] {
+    color: var(--text) !important;
+}
+
+[data-testid="stChatInput"] {
+    background: var(--surface) !important;
+    border-top: 1px solid var(--line) !important;
+    border-radius: 8px !important;
+}
+
+[data-testid="stChatInput"] textarea {
+    color: var(--text) !important;
+}
+
+[data-testid="stChatInput"]:focus-within {
+    border-color: var(--accent-border) !important;
+}
+
+/* ─── Metric Cards ─── */
+[data-testid="stMetric"] {
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    box-shadow: var(--shadow);
+    padding: 0.7rem 0.85rem;
+}
+
+[data-testid="stMetricValue"] {
+    color: var(--text) !important;
+    font-size: 1.35rem !important;
+    font-weight: 650 !important;
+}
+
+[data-testid="stMetricLabel"] {
+    color: var(--text-muted) !important;
+    font-size: 0.8rem !important;
+}
+
+[data-testid="stSidebar"] [data-testid="stMetric"] {
+    background: var(--sidebar-surface);
+    border-color: var(--line);
+    box-shadow: none;
+}
+
+[data-testid="stSidebar"] [data-testid="stMetricValue"],
+[data-testid="stSidebar"] [data-testid="stMetricLabel"] {
+    color: var(--text);
+}
+
+/* ─── Badges ─── */
 .badge-pass {
-    background: rgba(46, 160, 67, 0.2);
-    color: #3fb950;
-    padding: 2px 8px;
-    border-radius: 4px;
+    background: rgba(16, 185, 129, 0.12);
+    color: #34d399;
+    padding: 2px 7px;
+    border-radius: 5px;
     font-size: 0.75rem;
     font-weight: 600;
-    border: 1px solid rgba(46, 160, 67, 0.3);
+    border: 1px solid rgba(16, 185, 129, 0.28);
 }
 
 .badge-fail {
-    background: rgba(248, 81, 73, 0.2);
-    color: #f85149;
-    padding: 2px 8px;
-    border-radius: 4px;
+    background: rgba(248, 113, 113, 0.12);
+    color: #f87171;
+    padding: 2px 7px;
+    border-radius: 5px;
     font-size: 0.75rem;
     font-weight: 600;
-    border: 1px solid rgba(248, 81, 73, 0.3);
+    border: 1px solid rgba(248, 113, 113, 0.28);
 }
 
 .badge-cache {
-    background: rgba(56, 139, 253, 0.2);
-    color: #58a6ff;
-    padding: 2px 8px;
-    border-radius: 4px;
+    background: rgba(56, 189, 248, 0.12);
+    color: #38bdf8;
+    padding: 2px 7px;
+    border-radius: 5px;
     font-size: 0.75rem;
     font-weight: 600;
-    border: 1px solid rgba(56, 139, 253, 0.3);
+    border: 1px solid rgba(56, 189, 248, 0.28);
 }
 
-/* Expanders */
-details {
-    background: rgba(22, 27, 34, 0.4);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 8px;
-    padding: 4px 10px;
+.status-dot {
+    display: inline-block;
+    width: 0.48rem;
+    height: 0.48rem;
+    border-radius: 999px;
+    margin-right: 0.4rem;
+    vertical-align: 0.04rem;
 }
 
-/* File uploader */
+.status-live {
+    background: var(--green);
+    box-shadow: 0 0 5px var(--green);
+}
+
+.status-down {
+    background: var(--red);
+}
+
+/* ─── Expanders & Details ─── */
+details, [data-testid="stExpander"] {
+    background: var(--surface) !important;
+    border: 1px solid var(--line) !important;
+    border-radius: 8px !important;
+    box-shadow: var(--shadow);
+    margin-bottom: 0.5rem;
+}
+
+details summary, [data-testid="stExpander"] summary {
+    color: var(--text) !important;
+    font-weight: 500 !important;
+}
+
+[data-testid="stSidebar"] details, [data-testid="stSidebar"] [data-testid="stExpander"] {
+    background: var(--sidebar-surface) !important;
+    border-color: var(--line) !important;
+    box-shadow: none;
+}
+
+/* ─── File Uploader ─── */
 [data-testid="stFileUploader"] {
-    border: 1px dashed rgba(255, 255, 255, 0.15);
-    border-radius: 10px;
+    border: 1px dashed var(--line-strong);
+    border-radius: 8px;
     padding: 16px;
-    background: rgba(22, 27, 34, 0.3);
+    background: var(--surface);
+    box-shadow: var(--shadow);
 }
 
-/* Code blocks */
+[data-testid="stFileUploader"]:hover {
+    border-color: var(--accent-border);
+}
+
+/* ─── Form Inputs ─── */
+[data-baseweb="input"],
+[data-baseweb="textarea"],
+[data-baseweb="select"] {
+    border-radius: 6px;
+    background-color: var(--surface-soft) !important;
+    color: var(--text) !important;
+    border-color: var(--line-strong) !important;
+}
+
 code {
-    background: rgba(110, 118, 129, 0.15);
-    color: #e6edf3;
+    background: #0d1410 !important;
+    color: #6ee7b7 !important;
+    border: 1px solid var(--line) !important;
     border-radius: 4px;
-    padding: 2px 5px;
+    padding: 2px 6px;
     font-size: 0.85em;
 }
 
-.model-live { color: #3fb950; font-size: 0.8rem; }
-.model-down { color: #f85149; font-size: 0.8rem; }
+.model-line {
+    color: var(--text);
+    margin: 0.35rem 0;
+    font-size: 0.88rem;
+}
+
+.citation-tag {
+    display: inline-flex;
+    align-items: center;
+    background: var(--surface-soft);
+    border: 1px solid var(--line);
+    color: var(--text-muted);
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-size: 0.75rem;
+    margin-right: 4px;
+}
+
+@media (max-width: 900px) {
+    .main .block-container,
+    [data-testid="stAppViewContainer"] .main .block-container {
+        padding-left: 0.85rem;
+        padding-right: 0.85rem;
+        padding-top: 0.75rem;
+    }
+
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 0.8rem;
+    }
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -325,12 +687,11 @@ def get_database_manager():
 
 @st.cache_resource(show_spinner="Connecting to Pinecone...")
 def get_pinecone_db():
-    db = get_database_manager()
-    return PineconeDB(db=db)
+    return PineconeDB()
 
 @st.cache_resource(show_spinner="Loading embedding model...")
 def get_embedding_manager():
-    return EmbeddingManager(use_gemini=False)
+    return EmbeddingManager()
 
 @st.cache_resource(show_spinner="Connecting to OpenRouter...")
 def get_openrouter_llm():
@@ -347,6 +708,8 @@ def init_session_state():
     db = get_database_manager()
     llm = get_openrouter_llm()
 
+    if "active_nav" not in st.session_state:
+        st.session_state.active_nav = "Chat"
     if "cognitive_hub" not in st.session_state:
         st.session_state.cognitive_hub = CognitiveMemoryHub(llm=llm, db=db)
     if "cache" not in st.session_state:
@@ -362,7 +725,7 @@ def init_session_state():
         if sessions:
             st.session_state.active_session_id = sessions[0]["id"]
         else:
-            st.session_state.active_session_id = db.create_session(title="New Conversation")
+            st.session_state.active_session_id = db.create_session(title="New conversation")
 
 
 # ─── Indexing helper ──────────────────────────────────────────────────────────
@@ -383,23 +746,31 @@ def index_file(fpath: Path, vdb: PineconeDB, emb: EmbeddingManager) -> int:
     return len(chunks)
 
 
-# ─── Sidebar (Gemini Style) ───────────────────────────────────────────────────
+# ─── Sidebar (Left Dashboard) ────────────────────────────────────────────────
 
 def render_sidebar():
     db = get_database_manager()
     with st.sidebar:
-        st.markdown("### RAG Assistant")
-        st.caption("Document Intelligence Engine")
-        st.divider()
+        # Branding: CogniRAG in Terminal Green with short one-line description
+        st.markdown(
+            """
+            <div class="sidebar-header">
+                <div class="sidebar-title">CogniRAG</div>
+                <div class="sidebar-desc">Autonomous cognitive memory & grounded document intelligence.</div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
 
-        # 1. New Chat Button (Green with icon + text)
-        if st.button("New Chat", key="new_chat_btn", icon=":material/add_comment:", use_container_width=True, type="primary"):
-            new_sid = db.create_session(title="New Conversation")
+        # 1. New chat action (Solid high-contrast black text/icon on emerald background)
+        if st.button("New chat", key="new_chat_btn", icon=":material/add_comment:", type="primary"):
+            new_sid = db.create_session(title="New conversation")
             st.session_state.active_session_id = new_sid
+            st.session_state.active_nav = "Chat"
             st.rerun()
 
-        # 2. Gemini-Style Chat History List with direct inline delete
-        st.markdown("##### Recent Chats")
+        # 2. Chat history list with direct inline delete
+        st.markdown("##### Conversations")
         sessions = db.list_sessions(limit=30)
         current_sid = st.session_state.get("active_session_id")
 
@@ -407,7 +778,7 @@ def render_sidebar():
             for s in sessions:
                 sid = s["id"]
                 stitle = s["title"]
-                is_active = (sid == current_sid)
+                is_active = (sid == current_sid and st.session_state.get("active_nav", "Chat") == "Chat")
 
                 # Truncate title cleanly
                 display_title = stitle if len(stitle) <= 22 else stitle[:20] + "..."
@@ -418,50 +789,32 @@ def render_sidebar():
                     if st.button(
                         display_title,
                         key=btn_key,
-                        use_container_width=True,
                         help=stitle,
                     ):
-                        if sid != current_sid:
-                            st.session_state.active_session_id = sid
-                            st.rerun()
+                        st.session_state.active_session_id = sid
+                        st.session_state.active_nav = "Chat"
+                        st.rerun()
 
                 with col_del:
                     if st.button("", key=f"del_sess_{sid}", icon=":material/delete:", help=f"Delete '{stitle}'", type="secondary"):
                         db.delete_session(sid)
                         remaining = db.list_sessions(limit=1)
-                        st.session_state.active_session_id = remaining[0]["id"] if remaining else db.create_session(title="New Conversation")
+                        st.session_state.active_session_id = remaining[0]["id"] if remaining else db.create_session(title="New conversation")
                         st.rerun()
 
         st.divider()
 
-        # 3. Cognitive Memory Summary Panel
+        # 3. Cognitive memory summary panel
         hub: CognitiveMemoryHub = st.session_state.cognitive_hub
         mem_summary = hub.get_dashboard_summary()
-        with st.expander("Cognitive Memory Hub", expanded=False):
-            st.markdown(f"**Working Memory:** `{mem_summary['working_memory']['recent_turns']}` turns")
-            st.markdown(f"**Episodic Recall:** `{mem_summary['episodic_memory']['total_episodes']}` episodes")
-            st.markdown(f"**User Preferences:** `{mem_summary['semantic_memory']['total_preferences']}` active")
-            st.markdown(f"**Domain Facts:** `{mem_summary['semantic_memory']['total_facts']}` learned")
-            st.markdown(f"**Task Recipes:** `{mem_summary['procedural_memory']['total_recipes']}` recipes")
+        with st.expander("Memory summary", expanded=False):
+            st.markdown(f"**Working memory:** `{mem_summary['working_memory']['recent_turns']}` turns")
+            st.markdown(f"**Episodic recall:** `{mem_summary['episodic_memory']['total_episodes']}` episodes")
+            st.markdown(f"**User preferences:** `{mem_summary['semantic_memory']['total_preferences']}` active")
+            st.markdown(f"**Domain facts:** `{mem_summary['semantic_memory']['total_facts']}` learned")
+            st.markdown(f"**Task recipes:** `{mem_summary['procedural_memory']['total_recipes']}` recipes")
 
-        # 4. Active Models Status
-        llm = get_openrouter_llm()
-        with st.expander("Active Models", expanded=False):
-            active = llm.get_active_models()
-            for task, model in active.items():
-                if model:
-                    friendly_name = format_model_name(model)
-                    st.markdown(
-                        f'<span class="model-live">●</span> **{task}**: `{friendly_name}`',
-                        unsafe_allow_html=True,
-                    )
-                else:
-                    st.markdown(
-                        f'<span class="model-down">●</span> **{task}**: offline',
-                        unsafe_allow_html=True,
-                    )
-
-        # 5. Quick Stats
+        # 4. Quick Stats (2 metrics in 1 line)
         vdb = get_pinecone_db()
         stats = vdb.get_stats()
         cache: SemanticAnswerCache = st.session_state.cache
@@ -469,7 +822,25 @@ def render_sidebar():
 
         col1, col2 = st.columns(2)
         col1.metric("Vectors", f"{stats['total_vector_count']:,}")
-        col2.metric("Cache Hits", cache_stats["hit_count"])
+        col2.metric("Cache hits", cache_stats["hit_count"])
+
+        st.divider()
+
+        # 5. Bottom Navigation (Documents & Settings in 1 line like the stats box)
+        col_nav_doc, col_nav_set = st.columns(2)
+        curr_nav = st.session_state.get("active_nav", "Chat")
+
+        with col_nav_doc:
+            doc_is_active = (curr_nav == "Documents")
+            if st.button("Documents", key="nav_docs_btn", icon=":material/description:", type="primary" if doc_is_active else "secondary"):
+                st.session_state.active_nav = "Documents"
+                st.rerun()
+
+        with col_nav_set:
+            set_is_active = (curr_nav == "Settings")
+            if st.button("Settings", key="nav_set_btn", icon=":material/tune:", type="primary" if set_is_active else "secondary"):
+                st.session_state.active_nav = "Settings"
+                st.rerun()
 
 
 # ─── Tab 1: Chat ──────────────────────────────────────────────────────────────
@@ -500,22 +871,42 @@ def render_chat_tab():
     # Load persistent messages from SQLite DB
     persistent_messages = db.get_session_messages(current_sid)
 
-    # Replay message history
-    for msg in persistent_messages:
-        role = msg["role"]
-        avatar = USER_AVATAR if role == "user" else ASSISTANT_AVATAR
-        with st.chat_message(role, avatar=avatar):
-            st.markdown(msg["content"])
-            _render_message_extras(msg)
+    # If no messages in this session yet, display minimal empty-state helper
+    if not persistent_messages:
+        st.markdown(
+            """
+            <div class="chat-empty-state">
+                <div class="chat-empty-icon">🌿</div>
+                <div class="chat-empty-title">CogniRAG Assistant</div>
+                <div class="chat-empty-desc">
+                    Ask questions across your indexed enterprise documents with grounded citations, multi-tier memory, and verification.
+                </div>
+                <div class="prompt-chips">
+                    <div class="prompt-chip">📌 <em>"Summarize key operational performance and milestones."</em></div>
+                    <div class="prompt-chip">📊 <em>"Extract financial figures, capacity statistics, and dates."</em></div>
+                    <div class="prompt-chip">🔍 <em>"Compare document policies and technical parameters."</em></div>
+                </div>
+            </div>
+            """,
+            unsafe_allow_html=True,
+        )
+    else:
+        # Replay message history
+        for msg in persistent_messages:
+            role = msg["role"]
+            avatar = USER_AVATAR if role == "user" else ASSISTANT_AVATAR
+            with st.chat_message(role, avatar=avatar):
+                st.markdown(msg["content"])
+                _render_message_extras(msg)
 
     # Chat input
-    query = st.chat_input("Ask a question about your documents...")
+    query = st.chat_input("Ask a question about indexed documents...")
     if not query:
         return
 
     # Auto-title session if it's currently default
     active_sess = db.get_session(current_sid)
-    if active_sess and active_sess["title"] in ("New Conversation", "New Chat"):
+    if active_sess and active_sess["title"] in ("New Conversation", "New Chat", "New conversation", "New chat"):
         new_title = query[:28] + ("..." if len(query) > 28 else "")
         db.update_session_title(current_sid, new_title)
 
@@ -525,85 +916,81 @@ def render_chat_tab():
         role="user",
         content=query,
     )
+
     with st.chat_message("user", avatar=USER_AVATAR):
         st.markdown(query)
 
+    # Assistant response generation
     with st.chat_message("assistant", avatar=ASSISTANT_AVATAR):
         tracer = ExecutionTracer()
-        try:
-            # 1. Embed query
-            embed_span = tracer.start_span("embed_query", component="embedding", inputs={"query": query})
-            query_vec = emb.embed_query(query)
-            tracer.finish_span(embed_span, outputs={"vector_dim": len(query_vec)})
 
-            # 2. Check semantic cache
-            cache_span = tracer.start_span("cache_lookup", component="cache")
-            cache_hit = cache.lookup(query_vec)
-            if cache_hit:
-                tracer.finish_span(cache_span, outputs={"cache_hit": True, "similarity": cache_hit["cache_similarity"]})
-                tracer.finish()
-                st.markdown(cache_hit["answer"])
+        try:
+            # 1. Semantic cache lookup
+            cache_span = tracer.start_span("semantic_cache_lookup", component="cache")
+            query_vec = emb.embed_query(query)
+            cached_entry = cache.lookup(query_vec)
+            tracer.finish_span(cache_span, outputs={"cache_hit": cached_entry is not None})
+
+            if cached_entry is not None:
+                sim_pct = cached_entry.get("similarity", cached_entry.get("cache_similarity", 1.0)) * 100
                 st.markdown(
-                    f'<span class="badge-cache">[Cache Hit: {cache_hit["cache_similarity"]:.1%}]</span>',
+                    f'<span class="badge-cache">Cached Answer ({sim_pct:.1f}% match)</span>',
                     unsafe_allow_html=True,
                 )
+                st.markdown(cached_entry["answer"])
+                if cached_entry.get("citations"):
+                    st.markdown("**Citations:** " + ", ".join([f"`{c}`" for c in cached_entry["citations"]]))
 
-                if cache_hit.get("citations"):
-                    st.markdown("**Citations:** " + ", ".join([f"`{c}`" for c in cache_hit["citations"]]))
-
-                # Save assistant cache hit to database
                 db.save_message(
                     session_id=current_sid,
                     role="assistant",
-                    content=cache_hit["answer"],
-                    citations=cache_hit["citations"],
+                    content=cached_entry["answer"],
+                    citations=cached_entry.get("citations", []),
                     grounding_score=1.0,
                     grounding_passed=True,
                     tokens_used=0,
                 )
-                hub.post_interaction_update(
-                    query=query,
-                    answer=cache_hit["answer"],
-                    citations=cache_hit["citations"],
-                    query_embedding=query_vec,
-                    session_id=current_sid,
-                )
-
+                tracer.finish()
                 _render_execution_trace(tracer)
                 return
 
-            tracer.finish_span(cache_span, outputs={"cache_hit": False})
+            # 2. Query planning
+            plan_span = tracer.start_span("query_planning", component="query_planner")
+            plan = planner.plan(query)
+            tracer.finish_span(plan_span, outputs=plan)
 
-            # 3. Assemble Cognitive Memory Context
-            mem_span = tracer.start_span("cognitive_memory_assembly", component="memory")
-            cognitive_context = hub.build_cognitive_context(
-                query=query,
-                query_embedding=query_vec,
-                session_id=current_sid,
-            )
-            tracer.finish_span(mem_span, outputs={"memory_context_len": len(cognitive_context)})
+            # 3. Retrieve cognitive memory context
+            mem_span = tracer.start_span("memory_context_build", component="cognitive_memory")
+            if hasattr(hub, "build_cognitive_context"):
+                cognitive_context = hub.build_cognitive_context(
+                    query=query,
+                    query_embedding=query_vec,
+                    session_id=current_sid,
+                )
+            else:
+                cognitive_context = hub.build_augmented_prompt_context(
+                    query=query,
+                    query_embedding=query_vec,
+                    session_id=current_sid,
+                )
+            tracer.finish_span(mem_span, outputs={"memory_context_length": len(cognitive_context)})
 
-            # 4. Plan the query
-            matched_recipe = hub.procedural_memory.match_recipe(query)
-            procedural_hint = hub.procedural_memory.get_context_string(query) if matched_recipe else None
-
-            planner_span = tracer.start_span("query_planning", component="query_planner", inputs={"query": query, "procedural_hint": bool(procedural_hint)})
-            with st.spinner("Planning retrieval strategy..."):
-                plan = planner.plan(query, procedural_hint=procedural_hint)
-            tracer.finish_span(planner_span, outputs=plan)
-
-            # 5. Execute retrieval + generation
+            # 4. Stream or execute RAG pipeline
+            answer_placeholder = st.empty()
+            answer_parts = []
+            reranked_chunks = []
+            citations = []
             formatted_context = ""
 
-            if plan["complexity"] == "simple" or len(plan["sub_queries"]) == 1:
-                # Simple path: stream directly
-                answer_parts = []
-                answer_placeholder = st.empty()
-                reranked_chunks = []
-                citations = []
+            is_direct_plan = (
+                plan.get("strategy") == "direct"
+                or plan.get("complexity", "simple") == "simple"
+                or len(plan.get("sub_queries", [])) <= 1
+            )
 
+            if is_direct_plan:
                 for event_type, data in rag_chain.run_stream(
-                    query=plan["sub_queries"][0],
+                    query=query,
                     initial_top_k=st.session_state.retrieval_top_k,
                     rerank_top_k=st.session_state.rerank_top_k,
                     filter_filenames=plan.get("doc_scope"),
@@ -614,7 +1001,7 @@ def render_chat_tab():
                         reranked_chunks = data
                     elif event_type == "token":
                         answer_parts.append(data)
-                        answer_placeholder.markdown("".join(answer_parts) + "▌")
+                        answer_placeholder.markdown("".join(answer_parts))
                     elif event_type == "done":
                         citations = data["citations"]
                         reranked_chunks = data.get("reranked_chunks", reranked_chunks)
@@ -624,7 +1011,7 @@ def render_chat_tab():
                 answer_placeholder.markdown(answer)
 
             else:
-                # Complex path: parallel sub-queries → merge
+                # Complex path: sub-queries execution and merger
                 with st.spinner(f"Running {len(plan['sub_queries'])} retrieval passes..."):
                     sub_results = []
                     for sub_q in plan["sub_queries"]:
@@ -650,7 +1037,7 @@ def render_chat_tab():
                 st.markdown(answer)
 
                 if merged.get("sub_queries"):
-                    with st.expander("Query Decomposition"):
+                    with st.expander("Query decomposition"):
                         for i, sq in enumerate(merged["sub_queries"], 1):
                             st.markdown(f"**Sub-query {i}:** {sq}")
 
@@ -659,9 +1046,9 @@ def render_chat_tab():
                 st.markdown("**Citations:** " + ", ".join([f"`{c}`" for c in citations]))
 
             # Context chunks expander
-            with st.expander("Retrieved Context Chunks"):
+            with st.expander("Retrieved context"):
                 for idx, ch in enumerate(reranked_chunks):
-                    st.markdown(f"**Chunk #{idx+1}** — `{ch['filename']}` Page {ch['page_number']}")
+                    st.markdown(f"**Chunk #{idx+1}:** `{ch['filename']}` page {ch['page_number']}")
                     st.code(ch["text"], language="text")
 
             # Grounding audit
@@ -675,11 +1062,11 @@ def render_chat_tab():
             tracer.finish_span(eval_span, outputs={"grounding_score": eval_res["overall_grounding_score"], "passed": eval_res["is_passed"]})
 
             badge = (
-                '<span class="badge-pass">PASSED</span>'
+                '<span class="badge-pass">Passed</span>'
                 if eval_res["is_passed"]
-                else '<span class="badge-fail">FAILED</span>'
+                else '<span class="badge-fail">Failed</span>'
             )
-            with st.expander("Grounding Audit"):
+            with st.expander("Grounding audit"):
                 st.markdown(
                     f"**Score:** {eval_res['overall_grounding_score']*100:.1f}% | "
                     f"**Faithfulness:** {eval_res['faithfulness_score']*100:.1f}% | "
@@ -690,7 +1077,7 @@ def render_chat_tab():
                 if eval_res["unsupported_numbers"]:
                     st.error("Unsupported numbers: " + ", ".join(eval_res["unsupported_numbers"]))
                 else:
-                    st.success("Zero numerical hallucinations detected.")
+                    st.success("No unsupported numbers detected.")
 
             # Store in cache
             cache.store(query_vec, answer, citations, query_text=query)
@@ -731,15 +1118,15 @@ def render_chat_tab():
 def _render_execution_trace(tracer: ExecutionTracer):
     """Renders the step-by-step telemetry trace under assistant messages."""
     summary = tracer.get_summary()
-    with st.expander("Execution Trace & Telemetry", expanded=False):
+    with st.expander("Execution trace", expanded=False):
         c1, c2, c3, c4 = st.columns(4)
-        c1.metric("Total Latency", f"{summary['total_duration_ms']:,.0f} ms")
-        c2.metric("LLM Calls", summary["llm_calls_count"])
-        c3.metric("LLM Latency", f"{summary['total_llm_time_ms']:,.0f} ms")
+        c1.metric("Total latency", f"{summary['total_duration_ms']:,.0f} ms")
+        c2.metric("LLM calls", summary["llm_calls_count"])
+        c3.metric("LLM latency", f"{summary['total_llm_time_ms']:,.0f} ms")
         models_str = ", ".join([m.split("/")[-1].replace(":free", "") for m in summary["models_used"]]) or "local"
-        c4.metric("Active Model", models_str)
+        c4.metric("Active model", models_str)
 
-        st.markdown("##### Execution Timeline")
+        st.markdown("##### Execution timeline")
         for idx, span in enumerate(tracer.spans, 1):
             status_text = "[OK]" if span.status == "success" else ("[WARN]" if span.status == "warning" else "[ERR]")
             col_s1, col_s2, col_s3 = st.columns([1, 4, 2])
@@ -768,8 +1155,8 @@ def _render_message_extras(msg: dict):
 
     if msg.get("grounding_score", 0.0) > 0:
         passed = msg.get("grounding_passed", False)
-        badge = '<span class="badge-pass">PASSED</span>' if passed else '<span class="badge-fail">FAILED</span>'
-        with st.expander("Grounding Audit"):
+        badge = '<span class="badge-pass">Passed</span>' if passed else '<span class="badge-fail">Failed</span>'
+        with st.expander("Grounding audit"):
             st.markdown(
                 f"**Score:** {msg['grounding_score']*100:.1f}% | Status: {badge}",
                 unsafe_allow_html=True,
@@ -782,16 +1169,23 @@ def render_documents_tab():
     vdb = get_pinecone_db()
     emb = get_embedding_manager()
 
-    st.markdown("### Upload Documents")
-    st.caption("Document ingestion and vector indexing use local embeddings (MiniLM-L6-v2) and cost zero API tokens.")
+    col_title, col_btn = st.columns([0.82, 0.18])
+    with col_title:
+        st.markdown("### Upload documents")
+        st.caption("Index PDF, Word, Excel, CSV, and text files for vector retrieval.")
+    with col_btn:
+        if st.button("← Back to Chat", key="back_to_chat_from_docs", use_container_width=True):
+            st.session_state.active_nav = "Chat"
+            st.rerun()
+
     uploaded = st.file_uploader(
-        "Drag & drop files here",
+        "Files to index",
         type=["pdf", "csv", "xlsx", "docx", "txt"],
         accept_multiple_files=True,
         label_visibility="collapsed",
     )
 
-    if uploaded and st.button("Index Uploaded Files", type="primary"):
+    if uploaded and st.button("Index files", type="primary"):
         progress = st.progress(0, text="Starting indexing...")
         total_chunks = 0
         has_error = False
@@ -803,7 +1197,7 @@ def render_documents_tab():
                 progress.progress((i + 0.5) / len(uploaded), text=f"Parsing {f.name}...")
                 n = index_file(save_path, vdb, emb)
                 total_chunks += n
-                progress.progress((i + 1) / len(uploaded), text=f"Indexed {f.name} -> {n} chunks")
+                progress.progress((i + 1) / len(uploaded), text=f"Indexed {f.name}: {n} chunks")
             except Exception as exc:
                 has_error = True
                 diag = ErrorDiagnosticManager.diagnose(exc, context=f"Uploading and Indexing Document `{f.name}`")
@@ -811,7 +1205,7 @@ def render_documents_tab():
 
         progress.empty()
         if not has_error:
-            st.success(f"Indexed {len(uploaded)} file(s) -> {total_chunks} total chunks saved to persistent database.")
+            st.success(f"Successfully indexed {len(uploaded)} file(s): {total_chunks} total chunks.")
             st.rerun()
         else:
             st.warning(f"Indexing completed with issues. Total indexed chunks: {total_chunks}")
@@ -819,18 +1213,18 @@ def render_documents_tab():
     st.divider()
 
     # Document registry
-    st.markdown("### Document Registry")
+    st.markdown("### Indexed documents")
     registry = vdb.list_documents()
 
     if not registry:
-        st.info("No documents indexed yet. Upload files above to get started.")
+        st.info("No documents indexed yet. Upload files above to begin.")
         return
 
     stats = vdb.get_stats()
     col1, col2, col3 = st.columns(3)
-    col1.metric("Vectors in Pinecone", f"{stats['total_vector_count']:,}")
-    col2.metric("Documents in DB", stats.get("db_documents", len(registry)))
-    col3.metric("Chunks in DB", f"{stats.get('db_chunks', 0):,}")
+    col1.metric("Vectors", f"{stats['total_vector_count']:,}")
+    col2.metric("Documents", stats.get("db_documents", len(registry)))
+    col3.metric("Chunks", f"{stats.get('db_chunks', 0):,}")
 
     st.markdown("")
 
@@ -838,7 +1232,7 @@ def render_documents_tab():
         col_name, col_chunks, col_date, col_del = st.columns([4, 1.5, 2.5, 1])
         col_name.markdown(f"`{filename}`")
         col_chunks.markdown(f"**{info['chunk_count']}** chunks")
-        indexed_at = info.get("indexed_at", "—")[:10]
+        indexed_at = info.get("indexed_at", "Not available")[:10]
         col_date.caption(f"Indexed: {indexed_at}")
         if col_del.button("", key=f"del_doc_{filename}", icon=":material/delete:", help=f"Delete {filename}", type="secondary"):
             deleted = vdb.delete_by_filename(filename)
@@ -881,13 +1275,22 @@ def render_settings_tab():
     hub: CognitiveMemoryHub = st.session_state.cognitive_hub
     cache: SemanticAnswerCache = st.session_state.cache
 
+    col_title, col_btn = st.columns([0.82, 0.18])
+    with col_title:
+        st.markdown("### System & Memory Settings")
+        st.caption("Inspect cognitive tiers, model configurations, and memory graph.")
+    with col_btn:
+        if st.button("← Back to Chat", key="back_to_chat_from_set", use_container_width=True):
+            st.session_state.active_nav = "Chat"
+            st.rerun()
+
     col_left, col_right = st.columns(2)
 
     with col_left:
-        st.markdown("### Cognitive Memory Explorer")
+        st.markdown("### Memory")
         
         # User Preferences Editor
-        with st.expander("User Preferences (Semantic Memory)", expanded=True):
+        with st.expander("User preferences", expanded=True):
             prefs = hub.semantic_memory.get_all_preferences()
             for k, v in prefs.items():
                 col_k, col_v, col_d = st.columns([2.5, 4, 1])
@@ -897,29 +1300,29 @@ def render_settings_tab():
                     hub.semantic_memory.delete_preference(k)
                     st.rerun()
 
-            st.markdown("##### Add / Update Preference")
+            st.markdown("##### Add or update preference")
             col_nk, col_nv = st.columns(2)
             new_k = col_nk.text_input("Key", placeholder="e.g. response_tone", key="new_pref_k")
             new_v = col_nv.text_input("Value", placeholder="e.g. Executive & concise", key="new_pref_v")
-            if st.button("Save Preference") and new_k and new_v:
+            if st.button("Save preference") and new_k and new_v:
                 hub.semantic_memory.set_preference(new_k, new_v)
                 st.success(f"Saved preference `{new_k}`")
                 st.rerun()
 
         # Domain Facts Graph
-        with st.expander("Domain Facts Graph (Semantic Memory)", expanded=False):
+        with st.expander("Domain facts", expanded=False):
             facts = hub.semantic_memory.get_all_facts(limit=20)
             if facts:
                 for f in facts:
                     col_f, col_fd = st.columns([6, 1])
-                    col_f.markdown(f"- **{f['subject']}** — *{f['predicate']}*: `{f['object']}`")
+                    col_f.markdown(f"- **{f['subject']}**: *{f['predicate']}* `{f['object']}`")
                     if col_fd.button("", key=f"del_fact_{f['id']}", icon=":material/cancel:", help="Erase domain fact", type="secondary"):
                         hub.semantic_memory.delete_fact(f["id"])
                         st.rerun()
             else:
                 st.caption("No domain facts stored yet. Learned facts will appear here.")
 
-            st.markdown("##### Add Domain Fact")
+            st.markdown("##### Add domain fact")
             col_s, col_p, col_o = st.columns(3)
             subj = col_s.text_input("Subject", placeholder="NTPC", key="fact_s")
             pred = col_p.text_input("Predicate", placeholder="commercial_capacity", key="fact_p")
@@ -930,7 +1333,7 @@ def render_settings_tab():
                 st.rerun()
 
         # Procedural Task Recipes Catalog
-        with st.expander("Task Execution Recipes (Procedural Memory)", expanded=False):
+        with st.expander("Task recipes", expanded=False):
             recipes = hub.procedural_memory.get_all_recipes()
             for r in recipes:
                 st.markdown(f"**Recipe:** `{r['name']}`")
@@ -940,7 +1343,7 @@ def render_settings_tab():
                 st.divider()
 
         # Episodic History
-        with st.expander("Episodic Memory History", expanded=False):
+        with st.expander("Past answers", expanded=False):
             episodes = hub.episodic_memory.get_recent_episodes(limit=10)
             if episodes:
                 for ep in episodes:
@@ -953,7 +1356,7 @@ def render_settings_tab():
 
         st.divider()
 
-        st.markdown("### Retrieval Parameters")
+        st.markdown("### Retrieval settings")
         st.session_state.retrieval_top_k = st.slider(
             "Initial retrieval top-K", 5, 30, st.session_state.retrieval_top_k
         )
@@ -962,35 +1365,37 @@ def render_settings_tab():
         )
 
     with col_right:
-        st.markdown("### OpenRouter Model Status")
+        st.markdown("### Model status")
         active_models = llm.get_active_models()
         for task, model in active_models.items():
             if model:
                 friendly_name = format_model_name(model)
                 st.markdown(
-                    f'<span class="model-live">●</span> **{task}** -> `{friendly_name}`',
+                    f'<div class="model-line"><span class="status-dot status-live"></span>'
+                    f'<strong>{task}</strong>: <code>{friendly_name}</code></div>',
                     unsafe_allow_html=True,
                 )
             else:
                 st.markdown(
-                    f'<span class="model-down">●</span> **{task}** -> offline',
+                    f'<div class="model-line"><span class="status-dot status-down"></span>'
+                    f'<strong>{task}</strong>: offline</div>',
                     unsafe_allow_html=True,
                 )
         if not llm.is_available():
             st.warning("OpenRouter is unavailable. All requests will use Gemini as fallback.")
         else:
-            st.success(f"OpenRouter connected — {len(llm._live_free_models)} free models available.")
+            st.success(f"OpenRouter connected: {len(llm._live_free_models)} free models available.")
 
         st.divider()
 
-        st.markdown("### Database & Memory Controls")
+        st.markdown("### Database and memory")
         col_c1, col_c2 = st.columns(2)
-        if col_c1.button("Clear Answer Cache", use_container_width=True):
+        if col_c1.button("Clear answer cache", key="clear_cache_btn"):
             cache.clear()
             st.success("Answer cache cleared.")
             st.rerun()
 
-        if col_c2.button("Reset Cognitive Memory", use_container_width=True):
+        if col_c2.button("Reset cognitive memory", key="reset_memory_btn"):
             hub.clear_all()
             st.success("Cognitive memory reset.")
             st.rerun()
@@ -999,7 +1404,7 @@ def render_settings_tab():
 
         st.divider()
 
-        st.markdown("### API Keys (Masked) :material/vpn_key:")
+        st.markdown("### API keys")
         from config import PINECONE_API_KEY, OPENROUTER_API_KEY, GEMINI_API_KEY
         def mask(k): return k[:8] + "..." + k[-4:] if len(k) > 12 else "not set"
         st.code(f"PINECONE_API_KEY   = {mask(PINECONE_API_KEY)}")
@@ -1013,22 +1418,15 @@ def main():
     init_session_state()
     render_sidebar()
 
-    st.markdown(
-        "<h1 style='margin-bottom:4px;font-size:1.8rem;'>RAG Assistant</h1>"
-        "<p style='color:#8b949e;margin-top:0;font-size:0.92rem;'>Persistent Document Intelligence — Powered by Pinecone + OpenRouter + SQLite</p>",
-        unsafe_allow_html=True,
-    )
+    active_nav = st.session_state.get("active_nav", "Chat")
 
-    tab_chat, tab_docs, tab_settings = st.tabs(["Chat", "Documents", "Settings"])
-
-    with tab_chat:
-        render_chat_tab()
-
-    with tab_docs:
+    # Render view based on active navigation
+    if active_nav == "Documents":
         render_documents_tab()
-
-    with tab_settings:
+    elif active_nav == "Settings":
         render_settings_tab()
+    else:
+        render_chat_tab()
 
 
 if __name__ == "__main__":

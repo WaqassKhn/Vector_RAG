@@ -32,6 +32,8 @@ logger = logging.getLogger(__name__)
 
 def _cosine_similarity(vec_a: np.ndarray, vec_b: np.ndarray) -> float:
     """Computes cosine similarity between two 1D float arrays."""
+    if vec_a.shape != vec_b.shape:
+        return 0.0
     norm_a = np.linalg.norm(vec_a)
     norm_b = np.linalg.norm(vec_b)
     if norm_a == 0 or norm_b == 0:

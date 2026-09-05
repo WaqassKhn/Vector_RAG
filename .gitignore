@@ -34,6 +34,7 @@ tmp/
 DEVELOPMENT_PLAN.md
 DEPLOYMENT_GUIDE.md
 TOKEN_BUDGET_GUIDE.md
+explanation.md
 
 # Evaluation Outputs, Experiment Summaries & Logs
 evals/
